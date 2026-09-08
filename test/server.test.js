@@ -107,12 +107,34 @@ test("set DCA via endpoint schedules future deposits", async () => {
   const id = list.indexes.at(-1).id;
   const r = await fetch(`${BASE}/api/indexes/${id}/dca`, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ dcaUsd: 250, periodDays: 1 }),
+    body: JSON.stringify({ dcaUsd: 5000, periodDays: 1 }),
   });
   assert.equal(r.status, 200);
   const j = await r.json();
-  assert.ok(j.dca && j.dca.usd === "250000000");
+  assert.ok(j.dca && j.dca.usd === "5000000000");
   assert.ok(j.dca.nextTs > Date.now() - 1000);
+});
+
+test("plan endpoint shows the decision layer without executing", async () => {
+  const list = await (await fetch(BASE + "/api/indexes")).json();
+  const id = list.indexes.at(-1).id;
+  const p = await (await fetch(`${BASE}/api/indexes/${id}/plan`)).json();
+  assert.ok(p.maxDriftBps !== undefined);
+  assert.ok(p.driftThresholdBps >= 0);
+  assert.ok(Array.isArray(p.orders));
+});
+
+test("deposit endpoint triggers an immediate DCA deposit", async () => {
+  const list = await (await fetch(BASE + "/api/indexes")).json();
+  const id = list.indexes.at(-1).id; // the index that the DCA test configured
+  const r = await fetch(`${BASE}/api/indexes/${id}/deposit`, { method: "POST" });
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.ok(j.rebalanced === true);
+  assert.ok(Number(j.depositedMicro) > 0);
+  // a deposit row is recorded with a signed ref
+  const ix = await (await fetch(BASE + `/api/indexes/${id}`)).json();
+  assert.ok(ix.log.some((l) => l.action === "DEPOSIT" && (l.ref || "").startsWith("SOV-")));
 });
 
 test("rebalance executes and logs a signed manifest ref", async () => {

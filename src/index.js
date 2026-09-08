@@ -7,10 +7,10 @@ import { fileURLToPath } from "node:url";
 import { openDB } from "./db.js";
 import { createIndex, getIndex, listIndexes, setPositions, setAgentState, logRebalance, updateDca } from "./db.js";
 import { normalizeWeights, portfolioState, driftBps, maxAbsDriftBps, planRebalance, signManifest } from "./engine.js";
-import { fetchAllPrices, fetchPrices, readFeedAnswer } from "./chainlink.js";
-import { ASSETS, EXECUTION_MODE, GEO, MICRO, assetByTicker, PRESETS, presetList } from "./config.js";
-import { geoCheck, clientIp } from "./geogate.js";
-import { runSweep, runIndexNow, agentBus, evaluateIndex, depositDue } from "./agent.js";
+import { fetchAllPrices, fetchPrices } from "./chainlink.js";
+import { ASSETS, EXECUTION_MODE, GEO, assetByTicker, PRESETS, presetList } from "./config.js";
+import { geoCheck } from "./geogate.js";
+import { runSweep, runIndexNow, agentBus, planIndex, runDepositNow } from "./agent.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
@@ -212,6 +212,8 @@ async function route(req, res) {
   const idxMatch = p.match(/^\/api\/indexes\/(\d+)$/);
   const rebalMatch = p.match(/^\/api\/indexes\/(\d+)\/rebalance$/);
   const dcaMatch = p.match(/^\/api\/indexes\/(\d+)\/dca$/);
+  const planMatch = p.match(/^\/api\/indexes\/(\d+)\/plan$/);
+  const depositMatch = p.match(/^\/api\/indexes\/(\d+)\/deposit$/);
   if (method === "GET" && idxMatch) {
     const idx = getIndex(db, Number(idxMatch[1]));
     if (!idx) return json(res, 404, { error: "index not found" });
@@ -279,6 +281,25 @@ async function route(req, res) {
     const periodDays = Number(body.periodDays || 7);
     const updated = updateDca(db, id, { dcaUsdMicro, dcaPeriodDays: periodDays });
     return json(res, 200, { ok: true, id, dca: { usd: updated.dca.usd_micro.toString(), periodDays: updated.dca.period_days, nextTs: updated.dca.next_ts } });
+  }
+
+  if (method === "POST" && depositMatch) {
+    const g = await geoCheck(req);
+    if (!g.allowed) return json(res, 403, { error: "geo-restricted", geo: g });
+    const id = Number(depositMatch[1]);
+    if (!getIndex(db, id)) return json(res, 404, { error: "index not found" });
+    const r = await runDepositNow(db, id);
+    return json(res, 200, r);
+  }
+
+  if (method === "GET" && planMatch) {
+    const id = Number(planMatch[1]);
+    const idx = getIndex(db, id);
+    if (!idx) return json(res, 404, { error: "index not found" });
+    const px = await fetchPrices(Object.keys(idx.weights));
+    const plan = await planIndex(db, id, px);
+    if (!plan) return json(res, 404, { error: "index unavailable" });
+    return json(res, 200, plan);
   }
 
   if (method === "POST" && rebalMatch) {

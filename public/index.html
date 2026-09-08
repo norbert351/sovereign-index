@@ -103,6 +103,7 @@
         <button id="d_refresh" class="ghost sm">Refresh</button>
       </div>
       <div class="grid" id="d_stats"></div>
+      <div class="card"><h2>Agent's plan</h2><div id="d_plan"></div></div>
       <div class="card"><h2>Holdings · weight vs target</h2><div id="d_holdings"></div></div>
       <div class="card"><h2>Recurring DCA</h2><div id="d_dca"></div></div>
       <div class="card"><h2>Agent decision log</h2><div id="d_log"></div></div>
@@ -114,15 +115,20 @@ const $=(s,el=document)=>el.querySelector(s);
 const el=(t,c,cl)=>{const e=document.createElement(t);if(c)e.textContent=c;if(cl)e.className=cl;return e};
 const usd=(v)=> v==null?'—': parseFloat(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const bps=(b)=>{ if(b==null)return '—'; const n=parseInt(b); return (n>0?'+':'')+n+'bps'; };
-let ASSETS=[], ACTIVE=null, STATE=null;
+let ASSETS=[], ACTIVE=null, STATE=null, GEO_ALLOWED=true;
 
 const geoEl=$('#geo');
 function showGeo(g){
   geoEl.classList.remove('hidden');
   if(!g){geoEl.innerHTML='<span class="badge b-warn">Checking origin…</span>';return;}
+  GEO_ALLOWED = !!g.allowed;
   geoEl.innerHTML = g.allowed
     ? `<span class="badge b-ok">Origin verified · ${g.country||'?'} · eligible</span> <span class="muted">US &amp; protected jurisdictions restricted (Regulation S)</span>`
     : `<span class="badge b-no">Restricted · ${g.reason||'not eligible'}</span>`;
+  // compliance: block state-changing controls when the origin is not eligible
+  const n=$('#n_create'), r=$('#d_rebal');
+  if(n)n.disabled=!GEO_ALLOWED;
+  if(r)r.disabled=!GEO_ALLOWED;
 }
 async function api(path,opts={}){
   const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});
@@ -173,18 +179,34 @@ function renderDca(ix){
   box.innerHTML=`
     <div class="row"><div>${on?'<span class="badge b-ok">On</span>':'<span class="badge b-warn">Off</span>'} <b>$${usd.toFixed(0)}</b> every ${period}d<div class="muted" style="font-size:11.5px">next deposit: ${next}</div></div></div>
     <div class="row" style="margin-top:10px"><label>Amount ($ per period)</label></div>
-    <input id="dc_usd" type="number" value="${Math.max(usd,100)}" min="0" style="width:130px"/>
+    <input id="dc_usd" type="number" value="${Math.max(usd,500)}" min="0" style="width:130px"/>
     <div class="row" style="margin-top:8px;justify-content:flex-start"><label>Period (days)</label></div>
     <input id="dc_period" type="number" value="${period}" min="1" style="width:90px"/>
-    <div class="btnbar"><button id="dc_set" class="sm">Set DCA</button><button id="dc_off" class="ghost sm">Turn off</button></div>`;
+    <p class="disc">Deposits deploy into whole tokens per constituent — the amount should be large enough to buy at least one of each.</p>
+    <div class="btnbar"><button id="dc_set" class="sm">Set DCA</button><button id="dc_dep" class="sm">Deposit now</button><button id="dc_off" class="ghost sm">Turn off</button></div>`;
   $('#dc_set').onclick=async()=>{
     const u=Number($('#dc_usd').value||0), pd=Math.max(1,Number($('#dc_period').value||7));
     await api(`/api/indexes/${ix.id}/dca`,{method:'POST',body:JSON.stringify({dcaUsd:u,periodDays:pd})});
     openIndex(ix.id);
   };
+  $('#dc_dep').onclick=async()=>{ await api(`/api/indexes/${ix.id}/deposit`,{method:'POST'}); openIndex(ix.id); };
   $('#dc_off').onclick=async()=>{ await api(`/api/indexes/${ix.id}/dca`,{method:'POST',body:JSON.stringify({dcaUsd:0,periodDays:period})}); openIndex(ix.id); };
 }
+async function renderPlan(id){
+  const box=$('#d_plan'); if(!box) return;
+  try{
+    const p=await api(`/api/indexes/${id}/plan`);
+    const drift=parseInt(p.maxDriftBps||0), thr=p.driftThresholdBps||300;
+    const act=p.orders.filter(o=>o.action==='BUY'||o.action==='SELL');
+    let html=`<div class="muted" style="margin-bottom:6px">Max drift <b class="${drift>thr?'neg':'pos'}">${bps(drift)}</b> / threshold ${bps(thr)} — ${drift>thr?'<b>agent will rebalance now</b>':'within target · holding'}</div>`;
+    if(drift>thr && act.length){
+      html += act.slice(0,8).map(o=>(`<div style="margin-top:2px;font-family:ui-monospace,monospace;font-size:11.5px">・<span class="${o.action==='BUY'?'pos':'neg'}">${o.action}</span> ${o.ticker} ${o.action==='BUY'?'+':'-'}${o.qty}</div>`)).join('');
+    }
+    box.innerHTML=html;
+  }catch(e){ box.innerHTML=`<div class="muted">Plan unavailable: ${e.message}</div>`; }
+}
 async function createIndex(){
+  if(!GEO_ALLOWED){ alert('Your region is not eligible (Coinbase Tokenized Stocks are Reg-S / non-US).'); return; }
   const weights={};
   $('#picker').querySelectorAll('.pctin').forEach(i=>{const v=Number(i.value||0);if(v>0)weights[i.dataset.tk]=Math.round(v*10000);});
   const sum=Object.values(weights).reduce((a,b)=>a+b,0); if(sum!==1000000){alert('Weights must total 100%');return;}
@@ -225,6 +247,7 @@ async function openIndex(id){
     <div class="stat"><div class="k">Agent</div><div class="v" style="font-size:13px;color:${ix.agent.status==='rebalanced'?'var(--acc2)':'var(--mut)'}">${ix.agent.status||'idle'}</div></div>`;
   renderHoldings(ix.holdings);
   renderDca(ix);
+  renderPlan(id);
   renderLog(ix.log);
   $('#d_rebal').onclick=async()=>{await api(`/api/indexes/${id}/rebalance`,{method:'POST'});openIndex(id);};
 }

@@ -28,7 +28,7 @@ The rebalance is executed against a **paper ledger** at the **live Chainlink pri
 ## Run it
 ```bash
 node --version   # >= 22.5 required (node:sqlite)
-npm run smoke    # 16 tests (engine unit + DCA deposit unit + live server e2e w/ real Chainlink prices)
+npm run smoke    # 18 tests (engine + DCA-deposit unit + live server e2e w/ real Chainlink prices)
 npm start        # SOV_DB_PATH=./data/sovereign.db SOV_GEO=demo PORT=8080 node src/index.js
 ```
 Open `http://localhost:8080` → build an index → watch the agent rebalance.
@@ -54,6 +54,8 @@ POST /api/indexes                -> { name, weights:{TICKER:wMicro} | preset, se
 GET  /api/indexes/:id            -> full view-model (incl. DCA schedule)
 POST /api/indexes/:id/rebalance  -> force rebalance (returns SOV- manifest)
 POST /api/indexes/:id/dca        -> set/replace { dcaUsd, periodDays } schedule
+POST /api/indexes/:id/deposit    -> trigger an immediate DCA deposit (demo/agent call)
+GET  /api/indexes/:id/plan       -> dry-run decision layer: drift + exact orders the agent WILL execute (no write)
 GET  /api/agent/stream           -> server-sent events (agent decisions)
 ```
 
