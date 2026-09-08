@@ -55,7 +55,7 @@ Local run: `node --version` (≥22.5) → `npm run smoke` (**18/18** tests) → 
 | Geo/Reg-S gate | Live `X-Forwarded-For: 8.8.8.8` → US 403 | Full per-jurisdiction B20 allow-list (not enumerated in-app) |
 | 18/18 tests | `npm run smoke` green | — |
 | Repo public | `github.com/norbert351/sovereign-index`, remote `main` | — |
-| **Onchain settlement** | — | **NOT wired** — `simulated` paper at live Chainlink price (disclosed, labeled) |
+| **Onchain settlement** | — | **NOT wired** — `simulated` paper at live Chainlink price (disclosed, labeled). No testnet version exists (B20 + feeds are mainnet-only). Verified 2026-09-09 that standard swap tooling (0x, CoW, sugar-sdk/Base MCP) does not route the B20 stock tokens. |
 | Demo video | — | Not yet recorded (recommended before submit) |
 
 ## Demo video (recommended before submit)
