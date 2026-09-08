@@ -1,0 +1,20 @@
+# node
+node_modules/
+
+# sqlite runtime data
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# secrets
+.env
+.env.*
+!*.example
+
+# logs
+*.log
+npm-debug.log*
+
+# os
+.DS_Store

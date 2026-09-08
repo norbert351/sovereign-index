@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sovereign Index</title>
+<meta name="theme-color" content="#0b0b10" />
+<style>
+  :root{
+    --bg:#0b0b10; --panel:#14141d; --panel2:#1a1a26; --line:#262636;
+    --txt:#eef0ff; --mut:#8a8fa8; --acc:#6c5ce7; --acc2:#00d2a0; --warn:#ffb020; --bad:#ff5470;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:640px;margin:0 auto;padding:16px 16px 80px}
+  header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-weight:800;font-size:15px}
+  header h1{font-size:19px;font-weight:700}
+  .sub{color:var(--mut);font-size:12.5px;margin-bottom:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:14px;font-weight:650;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+  .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600}
+  .b-ok{background:rgba(0,210,160,.14);color:var(--acc2)}
+  .b-no{background:rgba(255,84,112,.16);color:var(--bad)}
+  .b-warn{background:rgba(255,176,32,.16);color:var(--warn)}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px}
+  .stat .k{font-size:11px;color:var(--mut)}
+  .stat .v{font-size:20px;font-weight:700;margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{color:var(--mut);font-weight:600;text-align:right;padding:6px 6px;border-bottom:1px solid var(--line);font-size:11px}
+  th:first-child,td:first-child{text-align:left}
+  td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+  .pos{color:var(--acc2)} .neg{color:var(--bad)}
+  .bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;min-width:44px;margin-left:auto}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:4px}
+  button{background:var(--acc);color:#fff;border:0;border-radius:10px;padding:11px 14px;font-size:13.5px;font-weight:650;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.sm{padding:7px 11px;font-size:12px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+  .row label{font-size:12.5px;color:var(--mut)}
+  input[type=number],input[type=text],select{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 10px;font-size:13px;width:100%;margin-top:6px}
+  .tag{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:12px}
+  .tag b{color:var(--acc2)}
+  .log{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--mut)}
+  .log div{padding:3px 0;border-bottom:1px dashed var(--line)}
+  .log .h{color:var(--acc2)}
+  .btnbar{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  #geo{position:sticky;top:0;z-index:5;padding:9px 12px;border-radius:10px;font-size:12px;margin-bottom:12px;border:1px solid var(--line);backdrop-filter:blur(6px);background:rgba(11,11,16,.82)}
+  .pct input{width:64px;display:inline-block;margin:0;text-align:right}
+  .pct{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .pct span{flex:1;font-size:12.5px}
+  .disc{font-size:11.5px;color:var(--mut);margin-top:10px}
+  .muted{color:var(--mut)}
+  .hidden{display:none}
+  .skeleton{background:linear-gradient(90deg,var(--panel2) 25%,var(--line) 50%,var(--panel2) 75%);background-size:200% 100%;animation:sh 1.3s infinite}
+  @keyframes sh{to{background-position:-200% 0}}
+  .modal{position:fixed;inset:0;background:rgba(4,4,8,.6);display:grid;place-items:center;padding:16px;z-index:20}
+  .modal .card{width:100%;max-width:440px}
+</style>
+</head>
+<body>
+<div id="geo" class="hidden"></div>
+<div class="wrap">
+  <header>
+    <div class="logo">S</div>
+    <h1>Sovereign Index</h1>
+  </header>
+  <p class="sub">Set-and-forget index of <b>Coinbase Tokenized Stocks on Base</b>. The agent keeps your stated weights balanced 24/7 with live Chainlink Total-Return prices — autonomously.</p>
+
+  <div id="nav" class="btnbar">
+    <button data-v="dash" class="sm">Dashboard</button>
+    <button data-v="new" class="ghost sm">+ New Index</button>
+  </div>
+
+  <!-- new index -->
+  <div id="view-new" class="card hidden">
+    <h2>Build your index</h2>
+    <div class="row"><label>Name</label></div>
+    <input id="n_name" type="text" placeholder="My AI Exposure" />
+    <div class="row" style="margin-top:12px"><label>Constituents & weights (%)</label></div>
+    <div id="picker"></div>
+    <div class="row" style="margin-top:12px"><label>Paper seed ($, for the live demo ledger)</label></div>
+    <input id="n_seed" type="number" value="10000" min="0" />
+    <div class="row" style="margin-top:12px;justify-content:flex-start"><label>Drift threshold (bps)</label></div>
+    <input id="n_thr" type="number" value="300" min="10" step="50" />
+    <p id="n_sum" class="disc"></p>
+    <div class="btnbar">
+      <button id="n_create">Create index</button>
+      <button id="n_back" class="ghost">Cancel</button>
+    </div>
+  </div>
+
+  <!-- dashboard -->
+  <div id="view-dash">
+    <div id="idxlist"></div>
+    <div id="detail" class="hidden">
+      <div class="btnbar" style="margin-bottom:12px">
+        <button id="d_rebal" class="sm">Rebalance now</button>
+        <button id="d_refresh" class="ghost sm">Refresh</button>
+      </div>
+      <div class="grid" id="d_stats"></div>
+      <div class="card"><h2>Holdings · weight vs target</h2><div id="d_holdings"></div></div>
+      <div class="card"><h2>Agent decision log</h2><div id="d_log"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+const $=(s,el=document)=>el.querySelector(s);
+const el=(t,c,cl)=>{const e=document.createElement(t);if(c)e.textContent=c;if(cl)e.className=cl;return e};
+const usd=(v)=> v==null?'—': parseFloat(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const bps=(b)=>{ if(b==null)return '—'; const n=parseInt(b); return (n>0?'+':'')+n+'bps'; };
+let ASSETS=[], ACTIVE=null, STATE=null;
+
+const geoEl=$('#geo');
+function showGeo(g){
+  geoEl.classList.remove('hidden');
+  if(!g){geoEl.innerHTML='<span class="badge b-warn">Checking origin…</span>';return;}
+  geoEl.innerHTML = g.allowed
+    ? `<span class="badge b-ok">Origin verified · ${g.country||'?'} · eligible</span> <span class="muted">US &amp; protected jurisdictions restricted (Regulation S)</span>`
+    : `<span class="badge b-no">Restricted · ${g.reason||'not eligible'}</span>`;
+}
+async function api(path,opts={}){
+  const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error||('HTTP '+r.status));
+  return j;
+}
+
+async function loadMeta(){
+  const m=await api('/api/meta');
+  ASSETS=m.assets;
+  renderPicker();
+  showGeo(m.geo);
+}
+
+function renderPicker(){
+  const box=$('#picker'); box.innerHTML='';
+  ASSETS.forEach(a=>{
+    const row=el('div','','pct');
+    row.innerHTML=`<span>${a.ticker} <span class="muted">· ${a.name}</span></span><input type="number" class="pctin" data-tk="${a.ticker}" value="0" min="0" max="100" step="1"/>`;
+    box.appendChild(row);
+  });
+  const sum=$('#n_sum'); sum.textContent='Weights must total 100%.';
+  box.querySelectorAll('.pctin').forEach(i=>i.addEventListener('input',()=>{sum.textContent='Total: '+[...box.querySelectorAll('.pctin')].reduce((a,x)=>a+Number(x.value||0),0)+'% (needs 100%)';}));
+}
+async function createIndex(){
+  const weights={};
+  $('#picker').querySelectorAll('.pctin').forEach(i=>{const v=Number(i.value||0);if(v>0)weights[i.dataset.tk]=Math.round(v*10000);});
+  const sum=Object.values(weights).reduce((a,b)=>a+b,0); if(sum!==1000000){alert('Weights must total 100%');return;}
+  const name=$('#n_name').value||'Sovereign Index';
+  const seed=Number($('#n_seed').value||0);
+  const thr=Number($('#n_thr').value||300);
+  try{
+    const r=await api('/api/indexes',{method:'POST',body:JSON.stringify({name,weights,seedUsd:seed,driftThresholdBps:thr})});
+    ACTIVE=r.id; switchView('dash'); refresh();
+  }catch(e){alert('Create failed: '+e.message);}
+}
+async function refresh(){
+  const idx=await api('/api/indexes');
+  renderList(idx.indexes);
+}
+function renderList(idxs){
+  const box=$('#idxlist'); box.innerHTML='';
+  idxs.forEach(ix=>{
+    const c=el('div','','card');
+    const drift=parseInt(ix.maxDriftBps||0), thr=ix.driftThresholdBps||300;
+    const over=drift>thr;
+    const status = ix.agent.lastRebalance? (over?'<span class="badge b-warn">drift '+'</span>':'<span class="badge b-ok">in balance</span>') : '<span class="badge b-warn">seeding</span>';
+    c.innerHTML=`<div class="row"><div><b style="font-size:15px">${esc(ix.name)}</b><div class="muted" style="font-size:11.5px">#${ix.id} · ${ix.holdings.length} holdings · ${status||''}</div></div><div style="text-align:right"><div style="font-weight:700;font-size:18px">$${usd(ix.navUsd)}</div><div class="muted" style="font-size:11px">max drift ${over?'<b class="neg">':''}${bps(drift)}${over?'</b>':''}</div></div></div>`;
+    c.addEventListener('click',()=>{ACTIVE=ix.id;openIndex(ix.id);switchView('dash')});
+    box.appendChild(c);
+  });
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+async function openIndex(id){
+  $('#detail').classList.remove('hidden');
+  const ix=await api('/api/indexes/'+id);
+  STATE=ix;
+  const drift=parseInt(ix.maxDriftBps||0),thr=ix.driftThresholdBps||300, over=drift>thr;
+  $('#d_stats').innerHTML=`
+    <div class="stat"><div class="k">Net Asset Value</div><div class="v">$${usd(ix.navUsd)}</div></div>
+    <div class="stat"><div class="k">Max drift</div><div class="v ${over?'neg':'pos'}">${bps(drift)}</div></div>
+    <div class="stat"><div class="k">Threshold</div><div class="v">${bps(thr)}</div></div>
+    <div class="stat"><div class="k">Agent</div><div class="v" style="font-size:13px;color:${ix.agent.status==='rebalanced'?'var(--acc2)':'var(--mut)'}">${ix.agent.status||'idle'}</div></div>`;
+  renderHoldings(ix.holdings);
+  renderLog(ix.log);
+  $('#d_rebal').onclick=async()=>{await api(`/api/indexes/${id}/rebalance`,{method:'POST'});openIndex(id);};
+}
+function renderHoldings(h){
+  const box=$('#d_holdings'); box.innerHTML=`<table><tr><th>Ticker</th><th>Qty</th><th>Price</th><th>Value $</th><th>Weight</th></tr>`;
+  h.forEach(r=>{
+    const w=parseInt(r.weightMicro||0)/10000, t=parseInt(r.targetMicro||0)/10000;
+    const pct=w.toFixed(1);
+    box.innerHTML+=`<tr><td><b>${esc(r.ticker)}</b><div class="muted" style="font-size:10px;${parseInt(r.driftBps||0)>0?'color:var(--acc2)':'color:var(--bad)'}">${bps(r.driftBps)}</div></td><td>${parseFloat(r.qty).toFixed(3)}</td><td>${usd(r.priceUsd)}</td><td>$${usd(r.valueUsd)}</td><td><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">${pct}%<div class="bar"><i style="width:${Math.min(w,100)}%"></i></div></div></td></tr>`;
+  });
+  box.innerHTML+=`</table>`;
+}
+function renderLog(log){
+  const box=$('#d_log'); box.innerHTML='';
+  if(!log||!log.length){box.innerHTML='<div class="muted">No rebalances yet — the agent runs every 60s and rebalances when drift exceeds the threshold.</div>';return;}
+  log.forEach(r=>{
+    const sign=r.action==='BUY'?'buy':'sell';
+    box.appendChild(el('div',`${new Date(r.ts).toLocaleTimeString()} · <span class="${sign==='buy'?'pos':'neg'}">${r.action}</span> ${r.ticker} ${sign==='buy'?'+':'-'}${r.qty} ($${usd(r.usd)} @ $${usd(r.px)}) · ref <span class="h">${shortHash(r.ref)}</span>`,'log'));
+  });
+}
+function shortHash(h){return h?h.slice(0,14)+'…':'';}
+function switchView(v){
+  $('#view-new').classList.toggle('hidden',v!=='new');
+  $('#view-dash').classList.toggle('hidden',v==='new');
+  $('#nav').querySelectorAll('button').forEach(b=>b.classList.toggle('ghost',b.dataset.v!=='dash'));
+}
+$('#nav').querySelector('[data-v=new]').onclick=()=>switchView('new');
+$('#nav').querySelector('[data-v=dash]').onclick=()=>{switchView('dash');refresh();};
+$('#n_create').onclick=createIndex;
+$('#n_back').onclick=()=>switchView('dash');
+$('#d_refresh').onclick=()=>{if(ACTIVE)openIndex(ACTIVE);};
+
+// live agent stream
+(function connect(){
+  const es=new EventSource('/api/agent/stream');
+  es.addEventListener('event',(e)=>{try{const d=JSON.parse(e.data);if(d.type==='rebalance'&&ACTIVE){refresh();openIndex(ACTIVE);}}catch{}});
+})();
+
+loadMeta().then(refresh).catch(e=>{console.error(e)});
+</script>
+</body>
+</html>

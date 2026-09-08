@@ -1,0 +1,18 @@
+{
+  "name": "sovereign-index",
+  "version": "1.0.0",
+  "description": "Sovereign Index — set-and-forget personalized index of Coinbase Tokenized Stocks on Base, auto-rebalanced 24/7 by an agent using Chainlink Total-Return price feeds.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "smoke": "node --test test/*.test.js",
+    "engine:test": "node --test test/engine.test.js",
+    "prices:test": "SOOV_REFRESH=0 node --test test/chainlink.test.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "license": "MIT",
+  "dependencies": {}
+}

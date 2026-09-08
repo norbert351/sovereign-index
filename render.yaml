@@ -1,0 +1,25 @@
+# Sovereign Index — zero-dep Node web service (live Chainlink prices + SSE agent).
+# Render web service (not serverless): the SSE agent stream + 60s rebalancer need
+# a long-lived HTTP process that answers requests.
+services:
+  - type: web
+    name: sovereign-index
+    runtime: node
+    plan: free
+    buildCommand: ""
+    startCommand: node src/index.js
+    healthCheckPath: /health
+    rootDir: .
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # US + protected jurisdictions blocked at the app layer (Regulation S).
+      # demo = block US only; switch to strict for production.
+      - key: SOV_GEO
+        value: demo
+      # Seed a demo index on first boot so the dashboard isn't empty for judges.
+      - key: SOV_SEED_ON_BOOT
+        value: "1"
+      - key: SOV_EXEC
+        value: simulated
+      # PORT is injected automatically by Render.
