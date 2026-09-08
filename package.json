@@ -8,7 +8,7 @@
     "start": "node src/index.js",
     "smoke": "node --test test/*.test.js",
     "engine:test": "node --test test/engine.test.js",
-    "prices:test": "SOOV_REFRESH=0 node --test test/chainlink.test.js"
+    "dca:test": "node --test test/dca.test.js"
   },
   "engines": {
     "node": ">=22.5.0"
