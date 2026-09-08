@@ -60,24 +60,55 @@ export function migrate(db) {
       payload TEXT NOT NULL
     );
   `);
+  // idempotent DCA columns (added 2026-09; CREATE IF NOT EXISTS never adds columns)
+  const cols = db.prepare(`PRAGMA table_info(indexes)`).all().map((c) => c.name);
+  if (!cols.includes("dca_usd_micro")) db.exec(`ALTER TABLE indexes ADD COLUMN dca_usd_micro INTEGER NOT NULL DEFAULT 0`);
+  if (!cols.includes("dca_period_days")) db.exec(`ALTER TABLE indexes ADD COLUMN dca_period_days INTEGER NOT NULL DEFAULT 7`);
+  if (!cols.includes("dca_next_ts")) db.exec(`ALTER TABLE indexes ADD COLUMN dca_next_ts INTEGER`);
 }
 
 // --- index CRUD --------------------------------------------------------------
-export function createIndex(db, { name, weights, thresholdBps, seedUsdMicro }) {
+export function createIndex(db, { name, weights, thresholdBps, seedUsdMicro, dcaUsdMicro, dcaPeriodDays }) {
   const now = Date.now();
-  const ins = db.prepare("INSERT INTO indexes(name, created_at, drift_threshold_bps) VALUES(?,?,?)");
-  const info = ins.run(name, now, thresholdBps ?? 300);
+  dcaUsdMicro = BigInt(dcaUsdMicro || 0);
+  const period = Number(dcaPeriodDays || 7);
+  const ins = db.prepare(`
+    INSERT INTO indexes(name, created_at, drift_threshold_bps, dca_usd_micro, dca_period_days, dca_next_ts)
+    VALUES(?,?,?,?,?,?)
+  `);
+  const info = ins.run(name, now, thresholdBps ?? 300, String(dcaUsdMicro), period,
+    dcaUsdMicro > 0n ? now + period * 86_400_000 : null);
   const id = Number(info.lastInsertRowid);
   const w = db.prepare("INSERT INTO index_weights(index_id, ticker, target_wmicro) VALUES(?,?,?)");
   for (const [tk, micro] of Object.entries(weights)) w.run(id, tk, Number(micro));
-  // optional seed: a flat (equal-weight-ish) starting paper position funded with seedUsdMicro
+  // optional seed: insert placeholder position rows so the view is complete
   if (seedUsdMicro && seedUsdMicro > 0) seedPositions(db, id, weights, seedUsdMicro);
   return id;
+}
+
+export function updateDca(db, id, { dcaUsdMicro, dcaPeriodDays }) {
+  const idx = db.prepare("SELECT * FROM indexes WHERE id=?").get(id);
+  if (!idx) return null;
+  const period = Number(dcaPeriodDays || 7);
+  const usd = BigInt(dcaUsdMicro || 0);
+  if (usd > 0n) {
+    db.prepare("UPDATE indexes SET dca_usd_micro=?, dca_period_days=?, dca_next_ts=? WHERE id=?")
+      .run(String(usd), period, Date.now() + period * 86_400_000, id);
+  } else {
+    db.prepare("UPDATE indexes SET dca_usd_micro=0, dca_period_days=?, dca_next_ts=NULL WHERE id=?")
+      .run(period, id);
+  }
+  return getIndex(db, id);
 }
 
 export function getIndex(db, id) {
   const r = db.prepare("SELECT * FROM indexes WHERE id=?").get(id);
   if (!r) return null;
+  r.dca = {
+    usd_micro: r.dca_usd_micro,
+    period_days: r.dca_period_days,
+    next_ts: r.dca_next_ts,
+  };
   r.weights = db.prepare("SELECT ticker, target_wmicro AS w FROM index_weights WHERE index_id=?").all(id)
     .reduce((a, x) => ({ ...a, [x.ticker]: BigInt(x.w) }), {});
   r.positions = db.prepare("SELECT ticker, balance_raw AS b FROM positions WHERE index_id=?").all(id)

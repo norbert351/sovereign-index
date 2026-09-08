@@ -63,3 +63,19 @@ export function assetByAddress(addr) {
 export function assetByTicker(t) {
   return ASSETS.find((a) => a.ticker.toLowerCase() === String(t).toLowerCase());
 }
+
+// Intent presets — one-click "describe your mix" starting points (weights in micro, sum 1e6).
+export const PRESETS = {
+  "AI & Semis": { NVDAc: 500_000n, TSLAc: 250_000n, MSFTc: 250_000n },
+  "Mag-7 Blend": { NVDAc: 250_000n, TSLAc: 200_000n, AAPLc: 150_000n, MSFTc: 150_000n, AMZNc: 100_000n, GOOGLc: 100_000n, METAc: 50_000n },
+  "Megacap Core": { AAPLc: 250_000n, MSFTc: 250_000n, GOOGLc: 200_000n, AMZNc: 150_000n, METAc: 150_000n },
+  "Crypto Equities": { COINc: 400_000n, MSTRc: 400_000n, NVDAc: 200_000n },
+  "Innovation Mix": { NVDAc: 400_000n, TSLAc: 300_000n, MSTRc: 300_000n },
+};
+
+export function presetList() {
+  return Object.entries(PRESETS).map(([name, weights]) => ({
+    name,
+    weights: Object.fromEntries(Object.entries(weights).map(([k, v]) => [k, v.toString()])),
+  }));
+}

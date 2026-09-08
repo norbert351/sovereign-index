@@ -87,6 +87,34 @@ test("index read model has live prices + holdings", async () => {
   assert.ok(Number(BigInt(ix.navMicro || "0")) > 0, "nav should be positive; holdings=" + JSON.stringify(ix?.holdings));
 });
 
+test("create index from an intent preset", async () => {
+  const r = await fetch(BASE + "/api/presets");
+  const { presets } = await r.json();
+  assert.ok(presets.length >= 3);
+  const preset = presets[0];
+  const c = await fetch(BASE + "/api/indexes", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: "FromPreset", preset: preset.name, seedUsd: 5000 }),
+  });
+  assert.equal(c.status, 201);
+  const j = await c.json();
+  assert.ok(Object.keys(j.weights).length > 0);
+  assert.deepEqual(Object.keys(j.weights).sort(), Object.keys(preset.weights).sort());
+});
+
+test("set DCA via endpoint schedules future deposits", async () => {
+  const list = await (await fetch(BASE + "/api/indexes")).json();
+  const id = list.indexes.at(-1).id;
+  const r = await fetch(`${BASE}/api/indexes/${id}/dca`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dcaUsd: 250, periodDays: 1 }),
+  });
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.ok(j.dca && j.dca.usd === "250000000");
+  assert.ok(j.dca.nextTs > Date.now() - 1000);
+});
+
 test("rebalance executes and logs a signed manifest ref", async () => {
   const list = await (await fetch(BASE + "/api/indexes")).json();
   const id = list.indexes[0].id;

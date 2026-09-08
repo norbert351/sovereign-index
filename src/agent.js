@@ -5,12 +5,12 @@
 // captured in a deterministic, tamper-evident manifest hash.
 import { EventEmitter } from "node:events";
 import {
-  normalizeWeights, portfolioState, driftBps, maxAbsDriftBps, planRebalance, signManifest,
+  normalizeWeights, portfolioState, driftBps, maxAbsDriftBps, planRebalance, signManifest, ONE,
 } from "./engine.js";
 import { readFeedAnswer, fetchAllPrices } from "./chainlink.js";
 import { assetByTicker, EXECUTION_MODE, MICRO } from "./config.js";
 import {
-  setPositions, logRebalance, setAgentState, savePriceSnapshot, getIndex, listIndexes,
+  setPositions, logRebalance, setAgentState, savePriceSnapshot, getIndex, listIndexes, updateDca,
 } from "./db.js";
 
 export const agentBus = new EventEmitter();
@@ -82,6 +82,43 @@ export function executePlan(db, id, { state, drift, maxDrift, plan }, prices) {
   return { hash: manifest.hash, executed: trades.length, mode: EXECUTION_MODE };
 }
 
+// Execute a scheduled DCA deposit: mint `dcaUsdMicro` of new paper capital into the
+// index, allocated by target weights at live prices. Schedules the next deposit.
+// Returns { depositedMicro, orders, next_ts } or null if not due.
+export async function depositDue(db, id, prices) {
+  const idx = getIndex(db, id);
+  if (!idx?.dca || !idx.dca.usd_micro || Number(idx.dca.usd_micro) <= 0) return null;
+  if (!idx.dca.next_ts || Date.now() < Number(idx.dca.next_ts)) return null;
+  const amount = BigInt(idx.dca.usd_micro);
+  const period = Number(idx.dca.period_days || 7);
+  const targets = idx.weights;
+  const pos = { ...idx.positions };
+  const orders = [];
+  let deposited = 0n;
+  for (const [tk, w] of Object.entries(targets)) {
+    const p = prices[tk];
+    if (!p || p.micro == null) continue;
+    const usdForTk = (amount * w) / ONE;
+    const qty = usdForTk / BigInt(p.micro);
+    if (qty <= 0n) continue;
+    pos[tk] = (pos[tk] || 0n) + qty;
+    orders.push({ ticker: tk, action: "DEPOSIT", qty, usdMicro: qty * BigInt(p.micro) });
+    deposited += qty * BigInt(p.micro);
+  }
+  const manifest = signManifest({
+    chainId: 8453n, indexId: id, nonce: idx.agent.nonce + 1, ts: Date.now(),
+    targets, prices, orders,
+  });
+  setPositions(db, id, pos);
+  for (const o of orders) logRebalance(db, {
+    indexId: id, action: "DEPOSIT", ticker: o.ticker, qty: o.qty,
+    usdMicro: o.usdMicro, pxMicro: prices[o.ticker]?.micro ?? 0n, ref: manifest.hash,
+  });
+  updateDca(db, id, { dcaUsdMicro: amount, dcaPeriodDays: period }); // resets next_ts = now + period
+  agentBus.emit("event", { type: "deposit", indexId: id, amount: deposited.toString(), next_ts: Date.now() + period * 86_400_000 });
+  return { depositedMicro: deposited, orders, next_ts: Date.now() + period * 86_400_000 };
+}
+
 // Run the full sweep across all indexes. force=true executes even if drift < threshold.
 export async function runSweep(db, { force = false } = {}) {
   const ids = listIndexes(db).map((r) => r.id);
@@ -90,6 +127,8 @@ export async function runSweep(db, { force = false } = {}) {
   savePriceSnapshot(db, JSON.stringify(prices));
   const outcomes = [];
   for (const id of ids) {
+    // 1) DCA deposit if due (new capital first, then rebalance to target)
+    try { await depositDue(db, id, prices); } catch (e) { /* keep sweep alive */ }
     const ev = await evaluateIndex(db, id, prices);
     if (!ev) { continue; }
     setAgentState(db, id, { status: ev.maxDrift > ev.idx.drift_threshold_bps ? "drift" : "within", last_run_ts: Date.now(), last_drift_bps: Number(ev.maxDrift) });

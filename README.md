@@ -12,9 +12,10 @@ The user states exactly what they want to own (tickers + target weights). The **
 1. Reads **live Chainlink Total-Return prices** for the Coinbase Tokenized Stock B20 tokens on Base,
 2. Measures each holding's **drift** from the stated target,
 3. **Rebalances autonomously** when drift exceeds the threshold — selling over-weights to fund under-weights (self-funding, no external cash),
-4. Records every decision in a deterministic, **tamper-evident manifest hash** (`SOV-…`), so what the agent did is always auditable.
+4. **Recurring DCA** — a scheduled deposit mints new paper capital into the index by target weight on a periodic cadence (set-and-forget dollar-cost averaging),
+5. Records every decision in a deterministic, **tamper-evident manifest hash** (`SOV-…`), so what the agent did is always auditable.
 
-It's a **software-callable surface**: the rebalance engine is a set of pure functions plus a `POST /api/indexes/:id/rebalance` endpoint, so a program/agent can drive it — the index runs on its own schedule under its own identity.
+It's a **software-callable surface**: the rebalance engine is a set of pure functions plus `POST /api/indexes/:id/rebalance` and `POST /api/indexes/:id/dca`, so a program/agent can drive it — the index runs on its own schedule under its own identity.
 
 ## Sponsor tech (all load-bearing)
 - **Coinbase Tokenized Stocks on Base** — the 13 B20 assets are the index constituents; the product cannot exist without them.
@@ -27,7 +28,7 @@ The rebalance is executed against a **paper ledger** at the **live Chainlink pri
 ## Run it
 ```bash
 node --version   # >= 22.5 required (node:sqlite)
-npm run smoke    # 12 tests (engine unit + live server e2e w/ real Chainlink prices)
+npm run smoke    # 16 tests (engine unit + DCA deposit unit + live server e2e w/ real Chainlink prices)
 npm start        # SOV_DB_PATH=./data/sovereign.db SOV_GEO=demo PORT=8080 node src/index.js
 ```
 Open `http://localhost:8080` → build an index → watch the agent rebalance.
@@ -46,11 +47,13 @@ Open `http://localhost:8080` → build an index → watch the agent rebalance.
 ```
 GET  /health                     -> ok, mode, deadline
 GET  /api/meta                   -> asset registry + geo status
+GET  /api/presets                -> intent presets (one-click mixes)
 GET  /api/prices                 -> live Chainlink prices per token
-GET  /api/indexes                -> all indexes (NAV, holdings, drift, agent, log)
-POST /api/indexes                -> { name, weights:{TICKER:wMicro}, seedUsd, driftThresholdBps }
-GET  /api/indexes/:id            -> full view-model
+GET  /api/indexes                -> all indexes (NAV, holdings, drift, DCA, agent, log)
+POST /api/indexes                -> { name, weights:{TICKER:wMicro} | preset, seedUsd, driftThresholdBps, dcaUsd, periodDays }
+GET  /api/indexes/:id            -> full view-model (incl. DCA schedule)
 POST /api/indexes/:id/rebalance  -> force rebalance (returns SOV- manifest)
+POST /api/indexes/:id/dca        -> set/replace { dcaUsd, periodDays } schedule
 GET  /api/agent/stream           -> server-sent events (agent decisions)
 ```
 

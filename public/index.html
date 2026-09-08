@@ -79,6 +79,8 @@
     <h2>Build your index</h2>
     <div class="row"><label>Name</label></div>
     <input id="n_name" type="text" placeholder="My AI Exposure" />
+    <div class="row" style="margin-top:14px"><label>Or start from an intent preset</label></div>
+    <div id="presets" class="btnbar" style="flex-wrap:wrap;gap:6px"></div>
     <div class="row" style="margin-top:12px"><label>Constituents & weights (%)</label></div>
     <div id="picker"></div>
     <div class="row" style="margin-top:12px"><label>Paper seed ($, for the live demo ledger)</label></div>
@@ -102,6 +104,7 @@
       </div>
       <div class="grid" id="d_stats"></div>
       <div class="card"><h2>Holdings · weight vs target</h2><div id="d_holdings"></div></div>
+      <div class="card"><h2>Recurring DCA</h2><div id="d_dca"></div></div>
       <div class="card"><h2>Agent decision log</h2><div id="d_log"></div></div>
     </div>
   </div>
@@ -145,6 +148,42 @@ function renderPicker(){
   const sum=$('#n_sum'); sum.textContent='Weights must total 100%.';
   box.querySelectorAll('.pctin').forEach(i=>i.addEventListener('input',()=>{sum.textContent='Total: '+[...box.querySelectorAll('.pctin')].reduce((a,x)=>a+Number(x.value||0),0)+'% (needs 100%)';}));
 }
+let PRESETS = [];
+async function loadPresets(){
+  const d = await api('/api/presets');
+  PRESETS = d.presets || [];
+  const box = $('#presets'); box.innerHTML='';
+  PRESETS.forEach(p=>{ const b=el('button','sm ghost'); b.textContent=p.name; b.style.margin='0'; b.onclick=()=>applyPreset(p); box.appendChild(b); });
+}
+function applyPreset(p){
+  const box=$('#picker');
+  box.querySelectorAll('.pctin').forEach(i=>i.value=0);
+  for(const [tk,w] of Object.entries(p.weights)){
+    const inp=box.querySelector(`.pctin[data-tk="${tk}"]`);
+    if(inp) inp.value=Number(w)/10000;
+  }
+  const sum=$('#n_sum'); sum.textContent='Total: '+[...box.querySelectorAll('.pctin')].reduce((a,x)=>a+Number(x.value||0),0)+'% (needs 100%)';
+}
+function renderDca(ix){
+  const box=$('#d_dca');
+  const usd = ix.dca && ix.dca.usd ? Number(ix.dca.usd)/1e6 : 0;
+  const period = ix.dca ? Number(ix.dca.periodDays||7) : 7;
+  const next = (ix.dca && ix.dca.nextTs) ? new Date(ix.dca.nextTs).toLocaleString() : 'off';
+  const on = usd>0;
+  box.innerHTML=`
+    <div class="row"><div>${on?'<span class="badge b-ok">On</span>':'<span class="badge b-warn">Off</span>'} <b>$${usd.toFixed(0)}</b> every ${period}d<div class="muted" style="font-size:11.5px">next deposit: ${next}</div></div></div>
+    <div class="row" style="margin-top:10px"><label>Amount ($ per period)</label></div>
+    <input id="dc_usd" type="number" value="${Math.max(usd,100)}" min="0" style="width:130px"/>
+    <div class="row" style="margin-top:8px;justify-content:flex-start"><label>Period (days)</label></div>
+    <input id="dc_period" type="number" value="${period}" min="1" style="width:90px"/>
+    <div class="btnbar"><button id="dc_set" class="sm">Set DCA</button><button id="dc_off" class="ghost sm">Turn off</button></div>`;
+  $('#dc_set').onclick=async()=>{
+    const u=Number($('#dc_usd').value||0), pd=Math.max(1,Number($('#dc_period').value||7));
+    await api(`/api/indexes/${ix.id}/dca`,{method:'POST',body:JSON.stringify({dcaUsd:u,periodDays:pd})});
+    openIndex(ix.id);
+  };
+  $('#dc_off').onclick=async()=>{ await api(`/api/indexes/${ix.id}/dca`,{method:'POST',body:JSON.stringify({dcaUsd:0,periodDays:period})}); openIndex(ix.id); };
+}
 async function createIndex(){
   const weights={};
   $('#picker').querySelectorAll('.pctin').forEach(i=>{const v=Number(i.value||0);if(v>0)weights[i.dataset.tk]=Math.round(v*10000);});
@@ -185,6 +224,7 @@ async function openIndex(id){
     <div class="stat"><div class="k">Threshold</div><div class="v">${bps(thr)}</div></div>
     <div class="stat"><div class="k">Agent</div><div class="v" style="font-size:13px;color:${ix.agent.status==='rebalanced'?'var(--acc2)':'var(--mut)'}">${ix.agent.status||'idle'}</div></div>`;
   renderHoldings(ix.holdings);
+  renderDca(ix);
   renderLog(ix.log);
   $('#d_rebal').onclick=async()=>{await api(`/api/indexes/${id}/rebalance`,{method:'POST'});openIndex(id);};
 }
@@ -201,8 +241,12 @@ function renderLog(log){
   const box=$('#d_log'); box.innerHTML='';
   if(!log||!log.length){box.innerHTML='<div class="muted">No rebalances yet — the agent runs every 60s and rebalances when drift exceeds the threshold.</div>';return;}
   log.forEach(r=>{
-    const sign=r.action==='BUY'?'buy':'sell';
-    box.appendChild(el('div',`${new Date(r.ts).toLocaleTimeString()} · <span class="${sign==='buy'?'pos':'neg'}">${r.action}</span> ${r.ticker} ${sign==='buy'?'+':'-'}${r.qty} ($${usd(r.usd)} @ $${usd(r.px)}) · ref <span class="h">${shortHash(r.ref)}</span>`,'log'));
+    let lbl, cls;
+    if(r.action==='BUY'){lbl=`+${r.qty}`; cls='pos';}
+    else if(r.action==='SELL'){lbl=`-${r.qty}`; cls='neg';}
+    else { lbl='+' + r.qty; cls='pos'; }
+    const tag = r.action==='DEPOSIT'?'<span style="color:var(--acc)">DEPOSIT</span>':`<span class="${cls}">${r.action}</span>`;
+    box.appendChild(el('div',`${new Date(r.ts).toLocaleTimeString()} · ${tag} ${r.ticker} ${lbl} ($${usd(r.usd)} @ $${usd(r.px)}) · ref <span class="h">${shortHash(r.ref)}</span>`,'log'));
   });
 }
 function shortHash(h){return h?h.slice(0,14)+'…':'';}
@@ -220,10 +264,10 @@ $('#d_refresh').onclick=()=>{if(ACTIVE)openIndex(ACTIVE);};
 // live agent stream
 (function connect(){
   const es=new EventSource('/api/agent/stream');
-  es.addEventListener('event',(e)=>{try{const d=JSON.parse(e.data);if(d.type==='rebalance'&&ACTIVE){refresh();openIndex(ACTIVE);}}catch{}});
+  es.addEventListener('event',(e)=>{try{const d=JSON.parse(e.data);if((d.type==='rebalance'||d.type==='deposit')&&ACTIVE){refresh();openIndex(ACTIVE);}}catch{}});
 })();
 
-loadMeta().then(refresh).catch(e=>{console.error(e)});
+loadMeta().then(() => { loadPresets(); refresh(); }).catch(e=>{console.error(e)});
 </script>
 </body>
 </html>

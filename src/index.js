@@ -5,12 +5,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { openDB } from "./db.js";
-import { createIndex, getIndex, listIndexes, setPositions, setAgentState, logRebalance } from "./db.js";
+import { createIndex, getIndex, listIndexes, setPositions, setAgentState, logRebalance, updateDca } from "./db.js";
 import { normalizeWeights, portfolioState, driftBps, maxAbsDriftBps, planRebalance, signManifest } from "./engine.js";
 import { fetchAllPrices, fetchPrices, readFeedAnswer } from "./chainlink.js";
-import { ASSETS, EXECUTION_MODE, GEO, MICRO, assetByTicker } from "./config.js";
+import { ASSETS, EXECUTION_MODE, GEO, MICRO, assetByTicker, PRESETS, presetList } from "./config.js";
 import { geoCheck, clientIp } from "./geogate.js";
-import { runSweep, runIndexNow, agentBus, evaluateIndex } from "./agent.js";
+import { runSweep, runIndexNow, agentBus, evaluateIndex, depositDue } from "./agent.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
@@ -113,6 +113,11 @@ function indexViewModel(idx, prices) {
     maxDriftBps: maxDrift.toString(),
     driftThresholdBps: idx.drift_threshold_bps,
     mechanism: EXECUTION_MODE,
+    dca: {
+      usd: idx.dca && idx.dca.usd_micro ? idx.dca.usd_micro.toString() : "0",
+      periodDays: idx.dca ? idx.dca.period_days : 7,
+      nextTs: idx.dca ? idx.dca.next_ts : null,
+    },
     holdings,
     agent: {
       status: idx.agent.status,
@@ -180,6 +185,10 @@ async function route(req, res) {
     });
   }
 
+  if (method === "GET" && p === "/api/presets") {
+    return json(res, 200, { presets: presetList() });
+  }
+
   if (method === "GET" && p === "/api/prices") {
     const g = await geoCheck(req);
     const px = await fetchAllPrices();
@@ -202,6 +211,7 @@ async function route(req, res) {
 
   const idxMatch = p.match(/^\/api\/indexes\/(\d+)$/);
   const rebalMatch = p.match(/^\/api\/indexes\/(\d+)\/rebalance$/);
+  const dcaMatch = p.match(/^\/api\/indexes\/(\d+)\/dca$/);
   if (method === "GET" && idxMatch) {
     const idx = getIndex(db, Number(idxMatch[1]));
     if (!idx) return json(res, 404, { error: "index not found" });
@@ -216,13 +226,20 @@ async function route(req, res) {
     let body;
     try { body = await readBody(req); } catch (e) { return json(res, 400, { error: e.message }); }
     const name = (body.name || "Sovereign Index").slice(0, 80);
-    const weightsIn = body.weights || {};
-    if (!weightsIn || Object.keys(weightsIn).length === 0) return json(res, 400, { error: "weights required" });
+    let name2 = name;
+    let weightsIn = body.weights || {};
+    if ((!weightsIn || Object.keys(weightsIn).length === 0) && body.preset && PRESETS[body.preset]) {
+      weightsIn = PRESETS[body.preset];
+      if (name === "Sovereign Index") name2 = "Sovereign: " + body.preset;
+    }
+    if (!weightsIn || Object.keys(weightsIn).length === 0) return json(res, 400, { error: "weights or a preset required" });
     for (const tk of Object.keys(weightsIn)) if (!assetByTicker(tk)) return json(res, 400, { error: `unknown ticker ${tk}` });
     const targets = normalizeWeights(weightsIn);
     const seedUsdMicro = BigInt(Math.round(Number(body.seedUsd || 0) * 1e6));
     const threshold = Number(body.driftThresholdBps || 300);
-    const id = createIndex(db, { name, weights: targets, thresholdBps: threshold, seedUsdMicro });
+    const dcaUsdMicro = BigInt(Math.round(Number(body.dcaUsd || 0) * 1e6));
+    const dcaPeriodDays = Number(body.periodDays || 7);
+    const id = createIndex(db, { name: name2 || name, weights: targets, thresholdBps: threshold, seedUsdMicro, dcaUsdMicro, dcaPeriodDays });
     // allocate the paper seed across tickers at live prices
     if (seedUsdMicro > 0n) {
       // retry once on RPC hiccup so a fresh index isn't seeded at 0 NAV
@@ -249,6 +266,19 @@ async function route(req, res) {
       weights: Object.fromEntries(Object.entries(targets).map(([k, v]) => [k, v.toString()])),
       subset: Object.keys(targets),
     });
+  }
+
+  if (method === "POST" && dcaMatch) {
+    const g = await geoCheck(req);
+    if (!g.allowed) return json(res, 403, { error: "geo-restricted", geo: g });
+    const id = Number(dcaMatch[1]);
+    if (!getIndex(db, id)) return json(res, 404, { error: "index not found" });
+    let body;
+    try { body = await readBody(req); } catch (e) { return json(res, 400, { error: e.message }); }
+    const dcaUsdMicro = BigInt(Math.round(Number(body.dcaUsd || 0) * 1e6));
+    const periodDays = Number(body.periodDays || 7);
+    const updated = updateDca(db, id, { dcaUsdMicro, dcaPeriodDays: periodDays });
+    return json(res, 200, { ok: true, id, dca: { usd: updated.dca.usd_micro.toString(), periodDays: updated.dca.period_days, nextTs: updated.dca.next_ts } });
   }
 
   if (method === "POST" && rebalMatch) {
