@@ -12,6 +12,7 @@ Personalized index as an **autonomous agent rail**, not a dashboard. The demo to
 - Autonomous 60s sweep + drift-triggered rebalance + recurring DCA deposits.
 - Tamper-evident `SOV-` decision manifests + `/plan` dry-run decision layer.
 - Real Chainlink Total-Return prices on Base mainnet; geographic/Reg-S gating.
+- **Two-page product** — marketing landing (`/`) funneling into the product app (`/app`), one brand system (Zodiak + General Sans, deep-ink + champagne-gold), 68s narrated live demo video (public playable URL).
 - Live deployment + 18/18 test suite + keep-alive.
 
 ## Next — the path from demo → product (in priority order)

@@ -2,19 +2,19 @@
 
 Paste-ready answers for the quest entry. *Verifier: run the commands under each section against the live URL before pasting.*
 
-## Project
+## Official submission requirements (2026-09-09)
+1. **Post a Loom demo on X explaining how the project works, tagging `@buildonbase`.**
+2. **Fill the entry form** with the fields below.
 
-- **Name:** Sovereign Index
-- **One-line pitch:** *Tell it your mix (tickers + weights, or a one-click preset); the Sovereign Index agent builds and keeps your personalized index of Coinbase Tokenized Stocks on Base balanced 24/7 — autonomously, on live Chainlink prices, with every decision auditable.*
-- **Live URL:** https://sovereign-index.onrender.com
-- **Repo (public):** https://github.com/norbert351/sovereign-index
-- **Theme aligned to:** Base's **"Request for Builders: Tokenized Stocks"** design lane **#2 — Personalized Index Creation** (with the autonomy/memes-and-agents lane as the presentational angle: "an agent that allocates into tokenized stocks on its own").
+## Entry form — filled
 
-## Text description (project)
-
-Sovereign Index is a self-custodied, set-and-forget personalized index of Coinbase Tokenized Stocks (B20) on Base mainnet. The user states exactly what they want to own — target tickers + weights, or a one-click preset (Mag-7 Blend, Megacap Core, AI & Semis, Crypto Equities, Innovation Mix) — and an autonomous agent maintains it 24/7: it reads **live Chainlink Total-Return prices** for every holding, measures drift from the target, and **self-rebalances** (selling over-weights to fund under-weights, no external cash) on a 60-second sweep under its own identity. Recurring **DCA** mints new capital into the index by target weight on a scheduled cadence. Every decision is recorded in a deterministic, tamper-evident `SOV-` manifest, and a `/plan` dry-run layer shows the exact orders the agent will execute before it acts. The engine is a software-callable surface (REST), so the index runs autonomously and can be driven by wallets/agents.
-
-Honest scope: execution runs against a **paper ledger at the live Chainlink price** and is labeled `simulated` everywhere — B20 settlement is policy-gated to authorized venues (general DEX aggregators return "no route"), which is the disclosed seam where a real authorized-venue router slots in. Prices, weights, drift and all decisions are real (verified live on Base mainnet); token movement is simulated and clearly labeled. **No US users** — Reg-S geo-gating is enforced at the app layer (403) mirroring the token's onchain policy.
+| Field | Value |
+|---|---|
+| **Project Name** | `Sovereign Index` |
+| **What does it solve? (1–2 lines)** | `It builds and keeps a personalized, auto-rebalanced index of Coinbase Tokenized Stocks on Base. An autonomous agent manages your exact mix 24/7 on live Chainlink prices, with signed, auditable decisions — diversified onchain stock exposure without a broker or manual rebalancing.` |
+| **Demo Video Link (public URL)** | `https://sovereign-index.onrender.com/sovereign-index-demo.mp4` *(served `video/mp4`, playable; also the Loom link once created)* |
+| **Live Project Link (URL)** | `https://sovereign-index.onrender.com` |
+| **Builder Code** | ⚠️ Your Base **ERC-8021** builder code (format `bc_xxxxxxxx`) — register/log in on **`base.dev`** (connect wallet → builder profile) to receive it; paste it here. Only your wallet can mint it. |
 
 ## Verification / replication guide
 
@@ -23,44 +23,58 @@ Honest scope: execution runs against a **paper ledger at the live Chainlink pric
 curl -s https://sovereign-index.onrender.com/api/prices
 #    -> { geo, prices: { NVDAc:{usd, micro, updatedAt}, AAPLc:…, … } }  real USD values
 
-# 2. Intent presets
-curl -s https://sovereign-index.onrender.com/api/presets
+# 2. Landing (marketing) and product (app) both live
+curl -s https://sovereign-index.onrender.com/        # landing title
+curl -s https://sovereign-index.onrender.com/app     # product app
+curl -sI https://sovereign-index.onrender.com/app     # GET/HEAD both 200
 
-# 3. Create an index from a preset
+# 3. Public playable demo video (200 video/mp4 on GET and HEAD)
+curl -sI https://sovereign-index.onrender.com/sovereign-index-demo.mp4
+
+# 4. Create an index from a preset
 curl -s -X POST https://sovereign-index.onrender.com/api/indexes \
   -H 'Content-Type: application/json' \
   -d '{"name":"Demo","preset":"Mag-7 Blend","seedUsd":5000}'
-#    -> { id, weights, subset }
 
-# 4. Dry-run decision layer (see the agent's EXACT intended orders before it acts)
+# 5. Dry-run decision layer (the agent's EXACT intended orders before it acts)
 curl -s https://sovereign-index.onrender.com/api/indexes/<id>/plan
 
-# 5. Trigger an immediate DCA deposit (mints paper capital by target weight)
+# 6. Immediate DCA deposit (mints paper capital by target weight, signed SOV-)
 curl -s -X POST https://sovereign-index.onrender.com/api/indexes/<id>/deposit
 
-# 6. Geo/Reg-S gate (US origin is blocked — quest rule)
+# 7. Geo/Reg-S gate (US origin blocked — quest rule)
 curl -s https://sovereign-index.onrender.com/api/prices -H 'X-Forwarded-For: 8.8.8.8'
 #    -> { geo: { allowed:false, country:"US", reason:"US-origin restricted (Regulation S…)" } }
 ```
 
-Local run: `node --version` (≥22.5) → `npm run smoke` (**18/18** tests) → `npm start` → open `http://localhost:8080`.
+Local run: `node --version` (≥22.5) → `npm run smoke` (**18/18** tests) → `npm start` → open `http://localhost:8080` (landing) / `…/app` (product).
 
 ## Verified / unverified matrix
 
 | Claim | Verified (how) | Unverified |
 |---|---|---|
-| Live on Base mainnet (chain 8453) | `CHAIN_ID=8453`, 13 B20 addresses + feed proxies in `src/config.js` match `base.org/stocks`; live `/api/prices` | — |
+| Live on Base mainnet (chain 8453) | `CHAIN_ID=8453`, 13 B20 addresses + feed proxies in `src/config.js`; live `/api/prices` | — |
 | Real Chainlink prices | `eth_call latestRoundData()` per feed, live HTTP 200 with real USD values + `updatedAt` | — |
-| Autonomy (agent on a schedule) | 60s sweep in `src/agent.js`; `/plan` shows real intended orders; signed `SOV-` manifests observed |
+| Landing (`/`) + product (`/app`) split | Live titles + `Back to landing` link present | — |
+| Public playable demo video | `GET`+`HEAD` `/sovereign-index-demo.mp4` → `200 video/mp4`, valid `ftyp` | — |
+| Autonomy (agent on a schedule) | 60s sweep in `src/agent.js`; `/plan` shows real intended orders; signed `SOV-` manifests observed | — |
 | Geo/Reg-S gate | Live `X-Forwarded-For: 8.8.8.8` → US 403 | Full per-jurisdiction B20 allow-list (not enumerated in-app) |
 | 18/18 tests | `npm run smoke` green | — |
 | Repo public | `github.com/norbert351/sovereign-index`, remote `main` | — |
 | **Onchain settlement** | — | **NOT wired** — `simulated` paper at live Chainlink price (disclosed, labeled). No testnet version exists (B20 + feeds are mainnet-only). Verified 2026-09-09 that standard swap tooling (0x, CoW, sugar-sdk/Base MCP) does not route the B20 stock tokens. |
-| Demo video | ✅ Committed: `docs/demo/sovereign-index-demo.mp4` (62s 720p, live take 2026-09-09) | — |
+| Demo video | ✅ v2 (68s, new UI) committed `docs/demo/sovereign-index-demo-v2.mp4` + public URL live | — |
+| **Builder Code** | — | ⚠️ **yours** — mint on `base.dev` (reg/log in → connect wallet → `bc_…` code) |
 
-## Demo video
+## Demo video (public URL + Loom step)
 
-**`docs/demo/sovereign-index-demo.mp4`** — a real live screencast of the deployed URL (62s, 720p, ≤20MB) proving: create an index from the Mag-7 Blend preset → live holdings table + "Agent's plan" dry-run → set a recurring DCA + trigger an immediate deposit (NAV rises, signed `SOV-` DEPOSIT manifests in the decision log) → the real Chainlink prices JSON on Base mainnet → final dashboard. Upload to YouTube (preferred) and paste the public link here + in the README before submit.
+- **Public playable URL (for the form):** `https://sovereign-index.onrender.com/sovereign-index-demo.mp4`
+- **Repo copy:** `docs/demo/sovereign-index-demo-v2.mp4` (68s, 720p, narrated)
+- **Loom-on-X step:** upload the same MP4 to **Loom** (`loom.com` → Upload) to get a Loom link, then **post it on X tagging `@buildonbase`** with the copy below.
+
+**Suggested X post (tight single post, attach the Loom/video):**
+> Built on **@base** — Sovereign Index: your *personal* index of Coinbase tokenized stocks, rebalanced 24/7 by an autonomous agent at live Chainlink prices. Every move signed & auditable. For non-US investors who want US-megacap exposure without a broker. State your mix, it keeps it balanced. sovereign-index.onrender.com · **@buildonbase** #BaseBuilderQuest
+
+*(A longer 4-post thread covering tone / what / does / who-why / how-to-use is in the working notes — ask and I'll re-paste.)*
 
 ## Submission deadline
 

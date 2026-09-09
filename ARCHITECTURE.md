@@ -4,9 +4,9 @@
 
 ```
                      ┌────────────────────────────────────────────────────┐
-                     │                 FRONTEND (static SPA)              │
-                     │   public/index.html — build index / pick preset,   │
-                     │   watch NAV + drift, live SSE feed, geo-aware UI   │
+                     │  FRONTEND: landing.html (/) + app.html (/app)        │
+                     │  landing = marketing (hero, live ticker, scrolls)    │
+                     │  app = build index, NAV + drift, SSE stream, geo     │
                      └──────────────────────┬─────────────────────────────┘
                                             │ HTTP / SSE
                      ┌──────────────────────▼─────────────────────────────┐
@@ -40,7 +40,7 @@
 
 **Layers** (all one process, one origin — UI + API served by the same Node process):
 
-1. **Frontend** — hand-built static SPA (`public/`). No framework, zero build step. Lets a user state a desired mix (weights or a preset), shows live NAV/holdings/drift, and streams agent decisions over SSE. Geo-aware: create/rebalance controls are disabled when the request origin is blocked.
+1. **Frontend** — two hand-built static pages (no framework, zero build step): **`landing.html` `/`** (marketing: editorial hero with a live NAV/holdings panel, live B20 price ticker, scroll-reveal animations, generated ink+gold brand imagery — funnels to `/app`) and **`app.html` `/app`** (the product: state a mix or preset, live NAV/holdings/drift, agent plan, DCA/deposit, SSE decision stream). Geo-aware: state-changing controls are disabled when the request origin is blocked.
 2. **API** — the software-callable surface. Everything the UI does is also a REST endpoint, so a program/agent can drive the index (the autonomy story).
 3. **Engine** — pure functions. Normalizes target weights, computes per-holding drift in bps vs the live Chainlink NAV, produces a **self-funding** rebalance plan (buys ≤ realized sells, whole-token floors), and signs every decision into a deterministic `SOV-<sha256>` manifest over `{chainId, indexId, nonce, targets, prices, orders}`.
 4. **Agent loop** — the autonomy. A 60s sweep checks every index: DCA deposits first (by target weight), then drift-triggered rebalance. A per-index lock serializes the sweep against a manual `/rebalance` so decisions can't double-apply. Runs under its own schedule/identity — no human in the loop.
@@ -61,12 +61,15 @@
 
 | File | Responsibility |
 |---|---|
-| `src/index.js` | HTTP server + routing + SSE `/agent/stream` + geo-aware responses |
+| `src/index.js` | HTTP server + routing (`/`→`landing.html`, `/app`→`app.html`, GET+HEAD static) + SSE `/agent/stream` + geo-aware responses + serves the public demo video (`/sovereign-index-demo.mp4`, `video/mp4`) |
 | `src/engine.js` | Pure rebalance engine: weights, drift, self-funding plan, `SOV-` signing |
 | `src/agent.js` | Agent loop: 60s sweep, DCA deposit, drift rebalance, per-index lock |
 | `src/chainlink.js` | Live `latestRoundData()` reads + decode + failover + cache |
 | `src/geogate.js` | Per-request IP-country geo-gate (US + strict-unknown hard block) |
 | `src/config.js` | Chain, 13 B20 token addresses + feed proxies, presets, thresholds |
 | `src/db.js` | `node:sqlite` schema + queries |
-| `public/index.html` | Frontend SPA |
+| `public/landing.html` | Marketing landing page (`/`) |
+| `public/app.html` | Product app (`/app`) |
+| `public/images/*` | Generated ink+gold brand imagery (hero/ledger/index-arcs) |
+| `public/sovereign-index-demo.mp4` | Publicly-served demo video (`video/mp4`) for the submission form |
 | `render.yaml` | Render free-tier blueprint (seed-on-boot, geo demo, simulated exec) |

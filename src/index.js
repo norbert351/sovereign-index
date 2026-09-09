@@ -57,7 +57,7 @@ function readBody(req, cap = 1_000_000) {
   });
 }
 
-function serveStatic(req, res, pathname) {
+function serveStatic(req, res, pathname, isHead = false) {
   let file = path.normalize(pathname);
   if (file === "/" || file === "") file = "/landing.html";
   else if (file === "/app" || file === "/app/") file = "/app.html";
@@ -67,6 +67,7 @@ function serveStatic(req, res, pathname) {
   if (!existsSync(abs) || !statSync(abs).isFile()) return json(res, 404, { error: "not found", path: pathname });
   const ext = path.extname(abs).toLowerCase();
   res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": "no-store" });
+  if (isHead) return res.end(); // HEAD: headers only, no body
   res.end(readFileSync(abs));
 }
 
@@ -330,7 +331,7 @@ async function route(req, res) {
   }
 
   // --- static / fallback -----------------------------------------------------
-  if (method === "GET") return serveStatic(req, res, url.pathname);
+  if (method === "GET" || method === "HEAD") return serveStatic(req, res, url.pathname, method === "HEAD");
   return json(res, 404, { error: "not found", path: p });
 }
 

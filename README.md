@@ -4,8 +4,8 @@
 
 Built for the **Base Builder Quests** — *"Build a project that helps people trade or use Coinbase Tokenized Stocks on Base."*
 
-**► Live demo:** https://sovereign-index.onrender.com
-**► Live demo video:** [`docs/demo/sovereign-index-demo.mp4`](docs/demo/sovereign-index-demo.mp4) (62s 720p — real live session: create from preset → holdings/plan → DCA deposit with signed `SOV-` manifests → live Chainlink prices on Base mainnet).
+**► Live demo:** https://sovereign-index.onrender.com — a marketing **landing page `/`** that funnels into the **product app `/app`** (one brand system: Zodiak serif + General Sans, deep-ink + champagne-gold).
+**► Live demo video:** public playable URL **https://sovereign-index.onrender.com/sovereign-index-demo.mp4** · repo copy [`docs/demo/sovereign-index-demo-v2.mp4`](docs/demo/sovereign-index-demo-v2.mp4) (68s 720p, narrated, new-UI take: landing scroll → create an index from a preset → holdings/"Agent's plan" → DCA deposit with signed `SOV-` manifests → live Chainlink prices → brand close).
 
 ## The problem
 
@@ -48,7 +48,7 @@ npm run smoke    # 18 tests
 npm start        # SOV_GEO=demo SOV_EXEC=simulated PORT=8080 node src/index.js
 ```
 
-Open `http://localhost:8080` → build an index (or pick a preset) → watch the agent self-rebalance via the live SSE stream.
+Open `http://localhost:8080` → landing page; open `http://localhost:8080/app` → the product (build an index or pick a preset) and watch the agent self-rebalance via the live SSE stream.
 
 ### Env
 

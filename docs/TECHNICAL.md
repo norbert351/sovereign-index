@@ -79,8 +79,10 @@ Run: `npm run smoke`.
 ## Deployment (`render.yaml`)
 
 - Free-tier web service (long-lived process — the SSE stream + 60s sweep need it), `runtime: node`, `buildCommand: ""`, `startCommand: node src/index.js`, `healthCheckPath: /health`, `NODE_VERSION: 22`.
+- **Static routing:** `/` serves the marketing `landing.html`; `/app` serves the product `app.html`; both **GET and HEAD** are supported for static files (so link-previewers/validators get correct headers). A publicly-served demo video lives at **`/sovereign-index-demo.mp4`** (`video/mp4`) so the quest form's "Demo Video Link" is a stable, playable URL.
 - `SOV_GEO=demo`, `SOV_EXEC=simulated`, `SOV_SEED_ON_BOOT=1` (a fresh deploy seeds a demo index so the dashboard isn't empty for judges).
 - A keep-alive job pings `/health` every ~10m so Render free-tier never cold-sleeps an active link.
+- CSS/JS fonts load from Fontshare + Google Fonts via CDN (Zodiak serif display, General Sans body, JetBrains Mono data).
 
 ## Known, honest limits
 
