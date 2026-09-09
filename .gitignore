@@ -16,8 +16,8 @@ data/
 *.log
 npm-debug.log*
 
-# live-demo recording intermediates (raw/master + timeline; keep the driver + final mp4)
-demo/raw.mp4
+# live-demo recording intermediates (raw/cut/final encodes + timeline; keep driver + docs/demo/*.mp4)
+demo/*.mp4
 demo/frames/
 demo/timeline.json
 demo/nar.wav

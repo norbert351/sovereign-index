@@ -56,11 +56,11 @@ Local run: `node --version` (≥22.5) → `npm run smoke` (**18/18** tests) → 
 | 18/18 tests | `npm run smoke` green | — |
 | Repo public | `github.com/norbert351/sovereign-index`, remote `main` | — |
 | **Onchain settlement** | — | **NOT wired** — `simulated` paper at live Chainlink price (disclosed, labeled). No testnet version exists (B20 + feeds are mainnet-only). Verified 2026-09-09 that standard swap tooling (0x, CoW, sugar-sdk/Base MCP) does not route the B20 stock tokens. |
-| Demo video | — | Not yet recorded (recommended before submit) |
+| Demo video | ✅ Committed: `docs/demo/sovereign-index-demo.mp4` (62s 720p, live take 2026-09-09) | — |
 
-## Demo video (recommended before submit)
+## Demo video
 
-Record a short live screencast of the working URL — create an index from a preset, hit `/plan` (show the intended orders), trigger `/deposit` (watch NAV rise + a `SOV-` manifest return), and show the US geo-block — then host it (YouTube preferred) and add the link here + to the README.
+**`docs/demo/sovereign-index-demo.mp4`** — a real live screencast of the deployed URL (62s, 720p, ≤20MB) proving: create an index from the Mag-7 Blend preset → live holdings table + "Agent's plan" dry-run → set a recurring DCA + trigger an immediate deposit (NAV rises, signed `SOV-` DEPOSIT manifests in the decision log) → the real Chainlink prices JSON on Base mainnet → final dashboard. Upload to YouTube (preferred) and paste the public link here + in the README before submit.
 
 ## Submission deadline
 

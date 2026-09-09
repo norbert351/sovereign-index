@@ -5,6 +5,7 @@
 Built for the **Base Builder Quests** — *"Build a project that helps people trade or use Coinbase Tokenized Stocks on Base."*
 
 **► Live demo:** https://sovereign-index.onrender.com
+**► Live demo video:** [`docs/demo/sovereign-index-demo.mp4`](docs/demo/sovereign-index-demo.mp4) (62s 720p — real live session: create from preset → holdings/plan → DCA deposit with signed `SOV-` manifests → live Chainlink prices on Base mainnet).
 
 ## The problem
 

@@ -1,0 +1,16 @@
+{
+  "window": 62.4,
+  "voice": "en-US-ChristopherNeural",
+  "rate": "+30%",
+  "lines": [
+    [1.5, "Sovereign Index — a set-and-forget portfolio of Coinbase tokenized stocks, kept balanced 24/7 by an autonomous agent."],
+    [6.5, "I'll build a new index from a one-click intent preset."],
+    [10.0, "Mag-7 Blend — the weights are applied instantly to every constituent."],
+    [12.0, "Creating the index against live Chainlink prices."],
+    [16.0, "The agent seeded the portfolio, and shows every holding — live price, value, and drift from target."],
+    [24.5, "I'll set a recurring DCA, then trigger an immediate deposit."],
+    [29.0, "The deposit mints new capital by target weight — and logs each order under a signed, tamper-evident manifest."],
+    [44.0, "Here are the real Chainlink prices powering every decision, live from Base mainnet."],
+    [55.5, "Sovereign Index — tell it your mix, it keeps it balanced. Live now on Base."]
+  ]
+}
