@@ -3,51 +3,58 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sovereign Index</title>
-<meta name="theme-color" content="#0b0b10" />
+<title>Sovereign Index · App</title>
+<meta name="theme-color" content="#070B12" />
+<link rel="preconnect" href="https://api.fontshare.com" /><link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=zodiak@300,400,500,600,700&f[]=general-sans@400,500,600&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#0b0b10; --panel:#14141d; --panel2:#1a1a26; --line:#262636;
-    --txt:#eef0ff; --mut:#8a8fa8; --acc:#6c5ce7; --acc2:#00d2a0; --warn:#ffb020; --bad:#ff5470;
+    --bg:#070B12; --panel:#0F151D; --panel2:#131B26; --line:#223044;
+    --txt:#F2F4F8; --mut:#8A93A6; --acc:#E3C07C; --acc2:#3ED7A3; --warn:#ffb020; --bad:#FF6B6B;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
+  body{background:var(--bg);color:var(--txt);font-family:"General Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
   .wrap{max-width:640px;margin:0 auto;padding:16px 16px 80px}
-  header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-weight:800;font-size:15px}
-  header h1{font-size:19px;font-weight:700}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#070B12;display:grid;place-items:center;font-weight:800;font-size:15px}
+  header h1{font-family:"Zodiak",serif;font-size:19px;font-weight:600;letter-spacing:.01em}
   .sub{color:var(--mut);font-size:12.5px;margin-bottom:16px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
   .card h2{font-size:14px;font-weight:650;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
-  .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600}
-  .b-ok{background:rgba(0,210,160,.14);color:var(--acc2)}
-  .b-no{background:rgba(255,84,112,.16);color:var(--bad)}
+  .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;font-family:"JetBrains Mono",monospace}
+  .b-ok{background:rgba(62,215,163,.14);color:var(--acc2)}
+  .b-no{background:rgba(255,107,107,.16);color:var(--bad)}
   .b-warn{background:rgba(255,176,32,.16);color:var(--warn)}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   .stat{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px}
   .stat .k{font-size:11px;color:var(--mut)}
-  .stat .v{font-size:20px;font-weight:700;margin-top:2px}
+  .stat .v{font-size:20px;font-weight:700;margin-top:2px;font-family:"JetBrains Mono",monospace}
   table{width:100%;border-collapse:collapse;font-size:12.5px}
   th{color:var(--mut);font-weight:600;text-align:right;padding:6px 6px;border-bottom:1px solid var(--line);font-size:11px}
   th:first-child,td:first-child{text-align:left}
   td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+  td b{font-family:"JetBrains Mono",monospace}
   .pos{color:var(--acc2)} .neg{color:var(--bad)}
   .bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;min-width:44px;margin-left:auto}
   .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:4px}
-  button{background:var(--acc);color:#fff;border:0;border-radius:10px;padding:11px 14px;font-size:13.5px;font-weight:650;cursor:pointer}
+  button{background:var(--acc);color:#070B12;border:0;border-radius:10px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:"General Sans",sans-serif}
   button.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
   button:disabled{opacity:.45;cursor:not-allowed}
   button.sm{padding:7px 11px;font-size:12px}
+  a.cta{display:inline-flex;align-items:center;background:transparent;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:7px 11px;font-size:12px;text-decoration:none}
+  a.cta:hover{color:var(--acc);border-color:var(--acc)}
   .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
   .row label{font-size:12.5px;color:var(--mut)}
   input[type=number],input[type=text],select{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 10px;font-size:13px;width:100%;margin-top:6px}
   .tag{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:12px}
   .tag b{color:var(--acc2)}
-  .log{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--mut)}
+  .log{font-family:"JetBrains Mono",Menlo,Consolas,monospace;font-size:11px;color:var(--mut)}
   .log div{padding:3px 0;border-bottom:1px dashed var(--line)}
-  .log .h{color:var(--acc2)}
+  .log .h{color:var(--acc)}
   .btnbar{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-  #geo{position:sticky;top:0;z-index:5;padding:9px 12px;border-radius:10px;font-size:12px;margin-bottom:12px;border:1px solid var(--line);backdrop-filter:blur(6px);background:rgba(11,11,16,.82)}
+  #geo{position:sticky;top:0;z-index:5;padding:9px 12px;border-radius:10px;font-size:12px;margin-bottom:12px;border:1px solid var(--line);backdrop-filter:blur(6px);background:rgba(7,11,18,.82)}
   .pct input{width:64px;display:inline-block;margin:0;text-align:right}
   .pct{display:flex;align-items:center;gap:8px;margin-bottom:7px}
   .pct span{flex:1;font-size:12.5px}
@@ -70,6 +77,7 @@
   <p class="sub">Set-and-forget index of <b>Coinbase Tokenized Stocks on Base</b>. The agent keeps your stated weights balanced 24/7 with live Chainlink Total-Return prices — autonomously.</p>
 
   <div id="nav" class="btnbar">
+    <a class="cta sm" href="/" aria-label="Back to landing">← Home</a>
     <button data-v="dash" class="sm">Dashboard</button>
     <button data-v="new" class="ghost sm">+ New Index</button>
   </div>

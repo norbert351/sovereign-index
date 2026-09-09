@@ -58,7 +58,8 @@ function readBody(req, cap = 1_000_000) {
 
 function serveStatic(req, res, pathname) {
   let file = path.normalize(pathname);
-  if (file === "/" || file === "") file = "/index.html";
+  if (file === "/" || file === "") file = "/landing.html";
+  else if (file === "/app" || file === "/app/") file = "/app.html";
   if (file.includes("..")) return json(res, 403, { error: "forbidden" });
   const abs = path.join(PUBLIC_DIR, file);
   if (!abs.startsWith(PUBLIC_DIR)) return json(res, 403, { error: "forbidden" });

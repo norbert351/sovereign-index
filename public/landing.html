@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sovereign Index — Your personal index, balanced for you</title>
+<meta name="description" content="An autonomous agent that builds and keeps a personalized index of Coinbase tokenized stocks on Base — rebalanced 24/7 on live Chainlink prices, every decision signed and auditable." />
+<meta name="theme-color" content="#070B12" />
+<link rel="preconnect" href="https://api.fontshare.com" /><link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=zodiak@300,400,500,600,700&f[]=general-sans@400,500,600&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070B12; --panel:#0F151D; --panel2:#131B26; --line:#223044;
+    --txt:#F2F4F8; --mut:#8A93A6; --acc:#E3C07C; --acc2:#3ED7A3; --bad:#FF6B6B;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--txt);font-family:"General Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  ::selection{background:rgba(227,192,124,.3)}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  h1,h2,.serif{font-family:"Zodiak",serif;font-weight:500;letter-spacing:.01em}
+  .mono,.num{font-family:"JetBrains Mono",monospace}
+
+  /* header */
+  header{position:sticky;top:0;z-index:50;background:rgba(7,11,18,.8);backdrop-filter:blur(12px);border-bottom:1px solid rgba(34,48,68,.6)}
+  .nav{display:flex;align-items:center;gap:8px;max-width:1120px;margin:0 auto;padding:14px 22px}
+  .brand{display:flex;align-items:center;gap:10px;margin-right:auto;text-decoration:none;color:var(--txt)}
+  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#070B12;display:grid;place-items:center;font-weight:800;font-size:15px}
+  .brand b.serif{font-size:17px}
+  .navlinks{display:flex;align-items:center;gap:22px}
+  .navlinks a{color:var(--mut);text-decoration:none;font-size:14px;transition:color .25s var(--ease)}
+  .navlinks a:hover{color:var(--acc)}
+  .cta{background:var(--acc);color:#070B12;border:0;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;text-decoration:none;font-family:"General Sans",sans-serif;transition:transform .25s var(--ease),box-shadow .25s var(--ease);white-space:nowrap}
+  .cta:hover{transform:translateY(-2px);box-shadow:0 12px 30px -10px rgba(227,192,124,.5)}
+  .burger{display:none;background:none;border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:8px 11px;cursor:pointer;font-size:16px}
+  @media(max-width:900px){
+    .navlinks{position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:6px;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 22px;transform:scaleY(0);transform-origin:top;opacity:0;transition:transform .3s var(--ease),opacity .3s var(--ease)}
+    .navlinks.open{transform:scaleY(1);opacity:1}
+    .burger{display:block}
+    .navlinks a{padding:8px 0}
+    .navlinks .cta{margin-top:8px;text-align:center}
+  }
+
+  /* hero */
+  .hero{position:relative;text-align:center;padding:84px 0 30px;overflow:hidden}
+  .glow{position:absolute;left:50%;top:-180px;transform:translateX(-50%);width:760px;height:760px;border-radius:50%;background:radial-gradient(circle,rgba(227,192,124,.16),transparent 60%);pointer-events:none;filter:blur(8px)}
+  .hero .badge{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:12.5px;color:var(--mut);background:rgba(15,21,29,.6)}
+  .hero .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--acc2);box-shadow:0 0 0 0 rgba(62,215,163,.6);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(62,215,163,.5)}70%{box-shadow:0 0 0 9px rgba(62,215,163,0)}100%{box-shadow:0 0 0 0 rgba(62,215,163,0)}}
+  .hero h1{font-size:clamp(38px,6vw,72px);line-height:1.04;margin:26px auto 20px;max-width:15ch}
+  .hero h1 em{font-style:normal;color:var(--acc)}
+  .hero .sub{color:var(--mut);font-size:clamp(16px,2vw,20px);max-width:52ch;margin:0 auto 34px}
+  .hero .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .ghost{background:transparent;border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:11px 18px;font-size:14px;font-weight:600;text-decoration:none;transition:border-color .25s,color .25s}
+  .ghost:hover{border-color:var(--acc);color:var(--acc)}
+
+  /* live panel */
+  .panel-wrap{position:relative;margin:54px auto 0;max-width:880px}
+  .panel{position:relative;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 40px 90px -40px rgba(0,0,0,.8);text-align:left}
+  .panel::before{content:"";position:absolute;inset:-1px;border-radius:22px;border:1px solid transparent;background:linear-gradient(120deg,rgba(227,192,124,.5),transparent 40%,transparent 60%,rgba(62,215,163,.35)) border-box;-webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .panel-head b.serif{font-size:18px}
+  .pill{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--acc2);border:1px solid rgba(62,215,163,.4);background:rgba(62,215,163,.08);border-radius:999px;padding:4px 10px}
+  .pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+  .pstat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .pstat .k{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+  .pstat .v{font-size:22px;font-weight:700;margin-top:4px;font-family:"JetBrains Mono",monospace}
+  .pstat .v.pos{color:var(--acc2)} .pstat .v.gold{color:var(--acc)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{color:var(--mut);font-weight:600;text-align:right;padding:9px 8px;border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  th:first-child,td:first-child{text-align:left}
+  td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;font-family:"JetBrains Mono",monospace;font-size:12.5px}
+  td.t{font-family:"General Sans",sans-serif;font-weight:600}
+  .wh{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+  .bar{height:5px;border-radius:4px;background:var(--line);overflow:hidden;width:56px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:4px}
+  .float{position:absolute;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px 16px;box-shadow:0 20px 40px -20px rgba(0,0,0,.7);animation:floaty 6s var(--ease) infinite}
+  .float .k{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+  .float .v{font-size:18px;font-weight:700;font-family:"JetBrains Mono",monospace;margin-top:2px}
+  .f1{top:-22px;left:-34px}.f2{bottom:-22px;left:12%}.f3{top:-30px;right:-26px}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  @media(max-width:900px){.pstats{grid-template-columns:1fr}.float{display:none}}
+  .panel-note{text-align:center;color:var(--mut);font-size:12.5px;margin-top:16px}
+  .panel-note .mono{color:var(--acc)}
+
+  /* ticker */
+  .ticker{overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(15,21,29,.5);padding:13px 0;position:relative}
+  .ticker-track{display:flex;gap:44px;width:max-content;animation:marquee 34s linear infinite}
+  .ticker:hover .ticker-track{animation-play-state:paused}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .tk{display:flex;align-items:baseline;gap:9px;white-space:nowrap}
+  .tk b{font-family:"JetBrains Mono",monospace;font-weight:600;color:var(--txt);font-size:13px}
+  .tk span{font-family:"JetBrains Mono",monospace;color:var(--acc2);font-size:13px}
+  .tk small{color:var(--mut);font-size:11px;font-family:"JetBrains Mono",monospace}
+
+  /* sections */
+  section{padding:86px 0}
+  .sec-head{max-width:640px;margin:0 auto 52px;text-align:center}
+  .sec-head .k{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--acc);text-transform:uppercase;letter-spacing:.14em}
+  .sec-head h2{font-size:clamp(28px,4vw,42px);line-height:1.12;margin-top:12px}
+  .sec-head p{color:var(--mut);margin-top:14px;font-size:16px}
+
+  /* what it is */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px;transition:transform .4s var(--ease),border-color .4s var(--ease)}
+  .card:hover{transform:translateY(-6px);border-color:rgba(227,192,124,.4)}
+  .card .ic{width:44px;height:44px;border-radius:12px;background:rgba(227,192,124,.12);border:1px solid rgba(227,192,124,.3);display:grid;place-items:center;font-size:20px;margin-bottom:16px}
+  .card h3.serif{font-size:20px;margin-bottom:8px}
+  .card p{color:var(--mut);font-size:14.5px}
+  @media(max-width:820px){.cards{grid-template-columns:1fr}}
+
+  /* how it works rail */
+  .rail{display:grid;grid-template-columns:1fr 44px 1fr 44px 1fr;align-items:stretch;gap:10px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px}
+  .step .n{font-family:"JetBrains Mono",monospace;color:var(--acc);font-size:13px}
+  .step h3.serif{font-size:18px;margin:10px 0 8px}
+  .step p{color:var(--mut);font-size:14px}
+  .rail-link{display:flex;align-items:center;justify-content:center;color:var(--mut)}
+  .rail-link svg{width:22px;height:22px}
+  @media(max-width:820px){.rail{grid-template-columns:1fr}.rail-link{display:none}}
+
+  /* showcase image band */
+  .showcase{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+  .showcase img{width:100%;border-radius:20px;border:1px solid var(--line);box-shadow:0 40px 80px -40px rgba(0,0,0,.8)}
+  .showcase .copy h2{font-size:clamp(28px,4vw,40px);line-height:1.12}
+  .showcase .copy p{color:var(--mut);margin-top:14px;font-size:16px}
+  .showcase ul{list-style:none;margin-top:20px}
+  .showcase li{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px;color:var(--txt)}
+  .showcase li::before{content:"·";color:var(--acc);font-weight:700}
+  @media(max-width:820px){.showcase{grid-template-columns:1fr}}
+
+  /* developers */
+  .dev{background:linear-gradient(180deg,rgba(15,21,29,.6),rgba(7,11,18,0));border:1px solid var(--line);border-radius:20px;padding:34px}
+  .dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px}
+  .dev h3.serif{font-size:22px;margin-bottom:10px}
+  .dev p{color:var(--mut);font-size:14.5px;margin-bottom:18px}
+  .dev code{display:block;background:#0A0F17;border:1px solid var(--line);border-radius:12px;padding:18px;font-family:"JetBrains Mono",monospace;font-size:12.5px;color:#c6d0e2;overflow-x:auto;white-space:pre}
+  .endpoint{display:flex;gap:14px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .endpoint .m{font-family:"JetBrains Mono",monospace;color:var(--acc2);font-size:11px;width:44px}
+  .endpoint code{font-family:"JetBrains Mono",monospace;color:var(--txt)}
+  @media(max-width:800px){.dev-grid{grid-template-columns:1fr}}
+
+  /* CTA band */
+  .band{text-align:center;border:1px solid var(--line);border-radius:24px;background:url('/images/index-arcs.png') center/cover;position:relative;overflow:hidden;padding:80px 22px}
+  .band::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,11,18,.86),rgba(7,11,18,.94));}
+  .band>*{position:relative;z-index:1}
+  .band h2{font-size:clamp(28px,4vw,44px);line-height:1.1;max-width:16ch;margin:0 auto 14px}
+  .band p{color:var(--mut);font-size:16px;max-width:44ch;margin:0 auto 30px}
+  .band .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--mut);font-size:13px}
+  .foot{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;max-width:1120px;margin:0 auto;padding:0 22px}
+  .foot a{color:var(--mut);text-decoration:none;margin-left:18px}
+  .foot a:hover{color:var(--acc)}
+
+  /* reveal */
+  html.js .reveal{opacity:0;transform:translateY(26px)}
+  html.js .reveal.in{opacity:1;transform:none;transition:opacity .8s var(--ease),transform .8s var(--ease)}
+  @media (prefers-reduced-motion: reduce){html.js .reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="nav">
+    <a class="brand" href="/"><span class="logo">S</span><b class="serif">Sovereign Index</b></a>
+    <button class="burger" aria-label="Menu" aria-expanded="false">☰</button>
+    <nav class="navlinks" id="navlinks">
+      <a href="#what">Product</a>
+      <a href="#how">How it works</a>
+      <a href="#dev">For developers</a>
+      <a class="cta" href="/app">Launch the app</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="glow"></div>
+  <div class="wrap">
+    <span class="badge"><span class="dot"></span> Live on Base · Real Chainlink prices</span>
+    <h1>Your personal index, <em>balanced for you&nbsp;· 24/7</em></h1>
+    <p class="sub">Sovereign Index is an autonomous agent that builds and keeps a personalized portfolio of Coinbase tokenized stocks on Base — rebalanced around the clock on live Chainlink prices, with every decision signed and auditable.</p>
+    <div class="btns">
+      <a class="cta" href="/app">Launch the app</a>
+      <a class="ghost" href="#how">How it works</a>
+    </div>
+  </div>
+  <div class="panel-wrap reveal">
+    <span class="float f1"><div class="k">Max drift</div><div class="v gold" id="fDrift">…</div></span>
+    <span class="float f2"><div class="k">Holdings</div><div class="v" id="fHeld">…</div></span>
+    <span class="float f3"><div class="k">Agent</div><div class="v acc2" id="fAgent">…</div></span>
+    <div class="panel">
+      <div class="panel-head"><b class="serif" id="pName">Sovereign index</b><span class="pill" id="pMech">simulated · live price</span></div>
+      <div class="pstats">
+        <div class="pstat"><div class="k">Net Asset Value</div><div class="v gold" id="pNav">…</div></div>
+        <div class="pstat"><div class="k">Target</div><div class="v" id="pTarget">A balanced mix</div></div>
+        <div class="pstat"><div class="k">Base mainnet</div><div class="v" id="pChain">chain 8453</div></div>
+      </div>
+      <table>
+        <thead><tr><th>Holding</th><th>Qty</th><th>Price</th><th>Value</th><th>Weight</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="panel-note">Live readout · <span class="mono" id="pDemo">the agent rebalances when drift > 300bps</span></p>
+  </div>
+</section>
+
+<div class="ticker" aria-hidden="true"><div class="ticker-track" id="ticker"></div></div>
+
+<section id="what" style="padding-top:60px">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="k">What it is</div>
+      <h2>Set-and-forget investing, <em class="serif" style="color:var(--acc)">without a broker</em></h2>
+      <p>Real tokenized megacap exposure, engineered into a personal basket the agent keeps on target for you.</p>
+    </div>
+    <div class="cards">
+      <div class="card reveal"><div class="ic">⚖️</div><h3 class="serif">Always in balance</h3><p>The agent measures each holding's drift from your stated mix and self-rebalances on a 60-second sweep — no manual work.</p></div>
+      <div class="card reveal"><div class="ic">🔗</div><h3 class="serif">Real onchain prices</h3><p>Every NAV and decision is priced from live Chainlink Total-Return feeds on Base — the same rails as the tokenized stock itself.</p></div>
+      <div class="card reveal"><div class="ic">🛡️</div><h3 class="serif">Signed &amp; auditable</h3><p>Each rebalance is bound to a deterministic, tamper-evident manifest — you can verify what the agent did, and why.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="k">How it works</div>
+      <h2>From your mix to a balanced index</h2>
+    </div>
+    <div class="rail">
+      <div class="step reveal"><div class="n">01</div><h3 class="serif">State your mix</h3><p>Tell it the tickers and weights you want — NVDA, Meta, Tesla, Apple — or start from a one-click intent preset.</p></div>
+      <div class="rail-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="step reveal"><div class="n">02</div><h3 class="serif">The agent builds &amp; holds</h3><p>It seeds the basket at live prices and keeps every holding on target, watching drift around the clock and triggering on schedule.</p></div>
+      <div class="rail-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="step reveal"><div class="n">03</div><h3 class="serif">Every move is auditable</h3><p>Add recurring DCA or deposit any time — each order ships under a signed manifest tied to live prices. No guesswork.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="showcase-wrap">
+  <div class="wrap">
+    <div class="showcase">
+      <div class="copy reveal">
+        <div class="k serif" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--acc);text-transform:uppercase;letter-spacing:.14em">A sovereign ledger</div>
+        <h2 class="serif" style="margin-top:12px">Money that <em style="color:var(--acc)">stays on target</em> while you're away</h2>
+        <p>The point of onchain index construction is personal scale — offchain managers can only offer broad products because their economics need volume. Yours is yours alone, balanced continuously.</p>
+        <ul>
+          <li>Recurring DCA into your exact mix, on your schedule</li>
+          <li>Software-callable: wallets &amp; agents can drive it, not just people</li>
+          <li>Regulation-S gated for eligible non-US users — enforced in-app</li>
+        </ul>
+      </div>
+      <img class="reveal" src="/images/hero-gold.png" alt="Sovereign growth — a champagne-gold trend line across an abstract market of tokenized stocks on deep ink" loading="lazy" />
+    </div>
+  </div>
+</section>
+
+<section id="dev">
+  <div class="wrap">
+    <div class="dev reveal">
+      <div class="sec-head" style="margin-bottom:34px">
+        <div class="k">For developers</div>
+        <h2 style="font-size:clamp(24px,3.5vw,34px)">A software-callable index engine</h2>
+      </div>
+      <div class="dev-grid">
+        <div>
+          <p>Drive the whole product over a tiny REST surface. Dry-run a rebalance before it's executed, or trigger a deposit from a program.</p>
+          <div class="endpoint"><span class="m">GET</span><code>/api/indexes</code></div>
+          <div class="endpoint"><span class="m">POST</span><code>/api/indexes  {preset, seedUsd}</code></div>
+          <div class="endpoint"><span class="m">GET</span><code>/api/indexes/:id/plan</code></div>
+          <div class="endpoint"><span class="m">POST</span><code>/api/indexes/:id/deposit</code></div>
+          <div class="endpoint"><span class="m">GET</span><code>/api/prices</code></div>
+        </div>
+        <div>
+          <code>curl -X POST /api/indexes \
+  -d '{"name":"My Mix",
+       "preset":"Mag-7 Blend",
+       "seedUsd":5000}'
+
+curl /api/indexes/1/plan
+# => { maxDriftBps, orders:[..],
+#      each: BUY/SELL at live price,
+#      signed: "SOV-&lt;sha256&gt;" }</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="band reveal">
+      <h2>Tell it your mix.<br/>It keeps it balanced.</h2>
+      <p>Live now on Base mainnet.</p>
+      <div class="btns">
+        <a class="cta" href="/app">Launch the app</a>
+        <a class="ghost" href="https://github.com/norbert351/sovereign-index" target="_blank" rel="noopener">View the code</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot">
+    <span>© 2026 Sovereign Index · Built for the Base Builder Quest</span>
+    <span><a href="/app">App</a><a href="https://github.com/norbert351/sovereign-index" target="_blank" rel="noopener">GitHub</a></span>
+  </div>
+</footer>
+
+<script>
+document.documentElement.classList.add('js');
+// reveal on scroll
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+// burger
+const b=document.querySelector('.burger'),nl=document.getElementById('navlinks');
+b.addEventListener('click',()=>{const open=!nl.classList.contains('open');nl.classList.toggle('open',open);b.setAttribute('aria-expanded',open)});
+document.querySelectorAll('#navlinks a').forEach(a=>a.addEventListener('click',()=>{nl.classList.remove('open');b.setAttribute('aria-expanded','false')}));
+
+const $=s=>document.querySelector(s);
+const fmt=v=> (v==null)?'—':parseFloat(String(v).replace(/,/g,'')).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// live ticker (ambient market marquee)
+async function loadTicker(){
+  try{
+    const j=await (await fetch('/api/prices')).json();
+    const p=j.prices||{};
+    const items2=Object.entries(p).filter(([,v])=>v&&v.usd!=null).map(([tk,v])=>`<div class="tk"><b>${tk}</b><span>$${fmt(v.usd)}</span><small>·</small></div>`).join('');
+    const track=$('#ticker');
+    track.innerHTML=items2+items2; // dup for seamless loop
+  }catch(e){}
+}
+
+// live hero panel from real API
+async function loadPanel(){
+  try{
+    const idx=await (await fetch('/api/indexes')).json();
+    const ix=(idx.indexes||[])[0];
+    if(!ix) return;
+    $('#fDrift').textContent=(parseInt(ix.maxDriftBps)>0?'+':'')+ix.maxDriftBps+'bps';
+    $('#fHeld').textContent=ix.holdings.length;
+    $('#fAgent').textContent=(ix.agent.status||'idle');
+    $('#pName').textContent=ix.name;
+    $('#pMech').textContent=ix.mechanism+' · live price';
+    $('#pNav').textContent='$'+fmt(ix.navUsd);
+    $('#pTarget').textContent=''+(ix.holdings.length)+' holdings · balanced';
+    const rows=$('#rows'); rows.innerHTML='';
+    ix.holdings.slice(0,6).forEach(h=>{
+      const w=parseInt(h.weightMicro||0)/10000;
+      rows.insertAdjacentHTML('beforeend',`<tr><td class="t">${h.ticker}</td><td>${parseFloat(h.qty).toFixed(2)}</td><td>$${fmt(h.priceUsd)}</td><td>$${fmt(h.valueUsd)}</td><td><div class="wh">${w.toFixed(1)}%<div class="bar"><i style="width:${Math.min(w,100)}%"></i></div></div></td></tr>`);
+    });
+  }catch(e){}
+}
+loadPanel(); loadTicker();
+setInterval(loadPanel,15000);
+</script>
+</body>
+</html>

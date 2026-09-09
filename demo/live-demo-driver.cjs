@@ -51,7 +51,7 @@ function waitFor(page, sel, text, timeout = 25000) {
   await page.setViewport({ width: 1280, height: 720 });
   fs.writeFileSync("/tmp/driver-live-pid", String(process.pid));
 
-  await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
+  await page.goto(URL + "/app", { waitUntil: "domcontentloaded", timeout: 60000 });
   await waitFor(page, "#idxlist .card", "AI & Consumer");
   mark("dashboard");
   await sleep(5000);
