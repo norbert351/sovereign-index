@@ -25,3 +25,7 @@ demo/nar.m4a
 
 # os
 .DS_Store
+# per-clip TTS intermediates
+demo/*.wav
+demo/*.mp3
+demo/concat.txt
