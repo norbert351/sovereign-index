@@ -7,6 +7,8 @@
 <meta name="description" content="An autonomous agent that builds and keeps a personalized index of Coinbase tokenized stocks on Base — rebalanced 24/7 on live Chainlink prices, every decision signed and auditable." />
 <meta name="theme-color" content="#070B12" />
 <meta name="base:app_id" content="6985357dc006f1453374def5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="icon" type="image/png" href="/favicon.png" />
 <link rel="preconnect" href="https://api.fontshare.com" /><link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
 <link href="https://api.fontshare.com/v2/css?f[]=zodiak@300,400,500,600,700&f[]=general-sans@400,500,600&display=swap" rel="stylesheet" />
 <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -29,7 +31,7 @@
   header{position:sticky;top:0;z-index:50;background:rgba(7,11,18,.8);backdrop-filter:blur(12px);border-bottom:1px solid rgba(34,48,68,.6)}
   .nav{display:flex;align-items:center;gap:8px;max-width:1120px;margin:0 auto;padding:14px 22px}
   .brand{display:flex;align-items:center;gap:10px;margin-right:auto;text-decoration:none;color:var(--txt)}
-  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#070B12;display:grid;place-items:center;font-weight:800;font-size:15px}
+  .logo{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);object-fit:cover;display:block}
   .brand b.serif{font-size:17px}
   .navlinks{display:flex;align-items:center;gap:22px}
   .navlinks a{color:var(--mut);text-decoration:none;font-size:14px;transition:color .25s var(--ease)}
@@ -166,7 +168,7 @@
 <body>
 <header>
   <div class="nav">
-    <a class="brand" href="/"><span class="logo">S</span><b class="serif">Sovereign Index</b></a>
+    <a class="brand" href="/"><img class="logo" src="/images/logo.png" alt="Sovereign Index" /><b class="serif">Sovereign Index</b></a>
     <button class="burger" aria-label="Menu" aria-expanded="false">☰</button>
     <nav class="navlinks" id="navlinks">
       <a href="#what">Product</a>
