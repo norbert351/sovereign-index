@@ -1,0 +1,20 @@
+{
+  "window": 68.1,
+  "voice": "en-US-ChristopherNeural",
+  "rate": "+28%",
+  "lines": [
+    [0.5, "Sovereign Index — a set-and-forget portfolio of Coinbase tokenized stocks on Base, kept balanced 24/7 by an autonomous agent."],
+    [8.5, "Real tokenized exposure, engineered into a personal basket that stays on target for you."],
+    [11.5, "State your mix, the agent builds it, rebalances on live prices, and audits every move."],
+    [14.0, "Money that stays on target — while you're away."],
+    [16.5, "And it's software-callable: a tiny API any program or agent can drive."],
+    [19.5, "Here's the product. I'll build a new index from a one-click preset."],
+    [25.7, "Choosing Mag-Seven Blend — weights applied instantly to every constituent."],
+    [28.4, "Creating the index against live Chainlink prices."],
+    [31.0, "The agent seeds the portfolio and shows every holding, live-priced, with drift from target."],
+    [38.0, "I'll set a recurring DCA, then trigger an immediate deposit."],
+    [41.5, "The deposit mints new capital by target weight, and logs each order under a signed, tamper-evident manifest."],
+    [55.0, "Every decision is priced by real Chainlink feeds, live from Base mainnet."],
+    [61.5, "Sovereign Index — tell it your mix, and it keeps it balanced. Live now at sovereign-index dot render dot com."]
+  ]
+}
