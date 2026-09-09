@@ -113,7 +113,7 @@
 <script>
 const $=(s,el=document)=>el.querySelector(s);
 const el=(t,c,cl)=>{const e=document.createElement(t);if(c)e.textContent=c;if(cl)e.className=cl;return e};
-const usd=(v)=> v==null?'—': parseFloat(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const usd=(v)=>{ if(v==null||v==='')return '—'; const n=typeof v==='number'?v:parseFloat(String(v).replace(/,/g,'')); return Number.isFinite(n)?n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'—'; };
 const bps=(b)=>{ if(b==null)return '—'; const n=parseInt(b); return (n>0?'+':'')+n+'bps'; };
 let ASSETS=[], ACTIVE=null, STATE=null, GEO_ALLOWED=true;
 
@@ -269,7 +269,7 @@ function renderLog(log){
     else if(r.action==='SELL'){lbl=`-${r.qty}`; cls='neg';}
     else { lbl='+' + r.qty; cls='pos'; }
     const tag = r.action==='DEPOSIT'?'<span style="color:var(--acc)">DEPOSIT</span>':`<span class="${cls}">${r.action}</span>`;
-    box.appendChild(el('div',`${new Date(r.ts).toLocaleTimeString()} · ${tag} ${r.ticker} ${lbl} ($${usd(r.usd)} @ $${usd(r.px)}) · ref <span class="h">${shortHash(r.ref)}</span>`,'log'));
+    box.appendChild(el('div',`${new Date(r.ts).toLocaleTimeString()} · ${tag} ${r.ticker} ${lbl} ($${usd(Number(r.usd)/1e6)} @ $${usd(Number(r.px)/1e6)}) · ref <span class="h">${shortHash(r.ref)}</span>`,'log'));
   });
 }
 function shortHash(h){return h?h.slice(0,14)+'…':'';}

@@ -16,5 +16,12 @@ data/
 *.log
 npm-debug.log*
 
+# live-demo recording intermediates (raw/master + timeline; keep the driver + final mp4)
+demo/raw.mp4
+demo/frames/
+demo/timeline.json
+demo/nar.wav
+demo/nar.m4a
+
 # os
 .DS_Store
